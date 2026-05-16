@@ -1,0 +1,143 @@
+{
+  "theme_and_archetype": {
+    "domain": "Mobile Puzzle Game",
+    "theme": "DARK",
+    "archetype": "7 (Electric & Neon)",
+    "reasoning": "The problem statement explicitly dictates a dark `#050510` background, a neon gradient palette, 3D glowing blocks, and high-energy particle effects. Archetype 7 perfectly captures this arcade/cyberpunk vibe."
+  },
+  "typography": {
+    "fonts": {
+      "headings": {
+        "family": "Unbounded",
+        "weights": ["700", "900"],
+        "usage": "Score, Combo popups, Modal Titles, Season Pass upsell."
+      },
+      "body": {
+        "family": "Outfit",
+        "weights": ["400", "600"],
+        "usage": "Button labels, daily rewards text, standard UI copy."
+      },
+      "numbers": {
+        "family": "JetBrains Mono",
+        "weights": ["700"],
+        "usage": "Streak counters, floating score additions (+300)."
+      }
+    },
+    "rules": {
+      "letter_spacing": "Tight tracking on headers (-0.02em).",
+      "capitalization": "All action buttons and overlines must be UPPERCASE.",
+      "glow": "Combo texts must have a drop-shadow matching the combo block color to simulate neon glow."
+    }
+  },
+  "colors": {
+    "background": {
+      "base": "#050510",
+      "header_gradient": "radial-gradient(circle at top, #1a1a3a 0%, #050510 100%)"
+    },
+    "neon_blocks": {
+      "pink": "#ff006e",
+      "purple": "#8338ec",
+      "cyan": "#3a86ff",
+      "mint": "#06ffa5",
+      "gold": "#ffbe0b",
+      "orange": "#ff9500"
+    },
+    "ui_elements": {
+      "danger": "#ff0033",
+      "grid_empty": "#151525",
+      "grid_border": "#2a2a40",
+      "tray_bg": "rgba(255, 255, 255, 0.03)"
+    }
+  },
+  "layout_and_spacing": {
+    "screen_constraints": {
+      "orientation": "portrait-only",
+      "max_width": "430px",
+      "alignment": "center (for larger screens, confine to centered 430px column)"
+    },
+    "grid": {
+      "dimensions": "8 columns x 10 rows",
+      "cell_size": "36px",
+      "gap": "3px",
+      "padding_inner": "4px"
+    },
+    "z_index_hierarchy": {
+      "background": 0,
+      "skyline_svg": 10,
+      "grid_board": 20,
+      "tray": 30,
+      "floating_ghost": 40,
+      "particles": 50,
+      "modals": 100
+    }
+  },
+  "visual_enhancers": {
+    "blocks_3d_bevel": {
+      "inner_shine": "inset 1px 1px 2px rgba(255, 255, 255, 0.6)",
+      "side_shadow": "inset -2px -2px 4px rgba(0, 0, 0, 0.4)",
+      "bottom_shadow": "0px 4px 0px rgba(0, 0, 0, 0.3)"
+    },
+    "skyline_scene": {
+      "type": "SVG Layered Scene",
+      "day_night_cycle": "Subtle opacity crossfade between a warm #ffbe0b radial sun and a cool #3a86ff moon behind the buildings.",
+      "buildings": "6 SVG vectors, initially grayscale/dim (opacity: 0.3). Unlock thresholds: 5, 12, 20, 28, 38, 48 lines. On unlock: Transition to full neon gradient fill + heavy drop-shadow glow."
+    },
+    "animations_and_juice": {
+      "placement": "Snap-to-grid with subtle scale bounce (0.95 -> 1.05 -> 1.0).",
+      "invalid_drop": "Elastic snap-back to tray slot.",
+      "line_clear": "White flash (0.1s) -> Scale row/col down to 0 -> Trigger particle burst -> Screen shake (intensity based on combo level).",
+      "danger_overlay": "Pulsing inset red shadow (`box-shadow: inset 0 0 40px #ff0033`) when grid > 75% full."
+    }
+  },
+  "interactions_and_haptics": {
+    "dragging": "Spawn 3D ghost under finger, offset Y by -40px so finger doesn't obscure piece.",
+    "hover_valid": "Ghost glows GREEN + Light Haptic impact.",
+    "hover_invalid": "Ghost glows RED.",
+    "drop_success": "Medium Haptic impact + Satisfying 'thud' sound.",
+    "line_clear_haptic": "Heavy Haptic impact + Ascending 'chime' SFX."
+  },
+  "monetization_ui": {
+    "top_bar": "Sticky header. Left: Score. Center: Streak (Flame Icon). Right: Coins. Below: Energy Bar (5/5 cells, segmented).",
+    "modals": {
+      "style": "Glassmorphism (`rgba(10, 10, 20, 0.8)`, `backdrop-blur-xl`), 1px cyan neon border.",
+      "game_over": "Title: 'Grid Locked'. Buttons: 'Watch Ad (Green, pulsating)', 'Continue (Cyan)', 'Buy Pass (Gold)', 'Restart (Gray)'.",
+      "season_pass": "Aggressive but premium. Large header image, scrolling list of rewards. CTA: '$4.99/mo' bouncing slightly."
+    }
+  },
+  "media": {
+    "urls": [
+      {
+        "category": "shop_gems",
+        "url": "https://static.prod-images.emergentagent.com/jobs/a4951157-a4c0-42fc-b349-70a5ef615d2c/images/cd48cd4b129e74ad15ed6c4b0ab7037361d05d2eff3e2850f7bce05050d4acdf.png",
+        "description": "3D glowing magenta gems for IAP shop bundles."
+      },
+      {
+        "category": "shop_coins",
+        "url": "https://static.prod-images.emergentagent.com/jobs/a4951157-a4c0-42fc-b349-70a5ef615d2c/images/b54879ea330bbea5e9506e290149ea033c68058ec526d433658eeee2b4c5ef6d.png",
+        "description": "3D glowing gold coins for IAP shop bundles."
+      },
+      {
+        "category": "daily_reward_chest",
+        "url": "https://static.prod-images.emergentagent.com/jobs/a4951157-a4c0-42fc-b349-70a5ef615d2c/images/9948fce92629b8e60bba292eb34607ab6ad0176d5b77d99cf48cda5b6638de51.png",
+        "description": "Sci-fi neon loot crate for 7-day calendar."
+      },
+      {
+        "category": "season_pass_hero",
+        "url": "https://static.prod-images.emergentagent.com/jobs/a4951157-a4c0-42fc-b349-70a5ef615d2c/images/4d4988106bfb4d82a336e8dc63f5cb07f8d4c1bd10501e0113305fcc27aa1c75.png",
+        "description": "Futuristic cyberpunk banner for Season Pass modal."
+      }
+    ]
+  },
+  "testing": {
+    "requirements": "All interactive elements (tray pieces, buttons, undo, shop items, settings toggles) MUST have a `data-testid` attribute using kebab-case role-based naming (e.g., `data-testid=\"undo-button\"`)."
+  },
+  "instructions_to_main_agent": [
+    "Build the core grid logic using an 8x10 matrix in standard React state or Zustand.",
+    "Use react-native-reanimated and react-native-gesture-handler to build the drag-and-drop system. Ensure the 'ghost' piece renders properly in the portal/root so it's not clipped by containers.",
+    "Implement the 3D block styling using overlapping Views with absolute positioning, inner shadows, and bottom borders to simulate a deep bevel.",
+    "Construct the SVG skyline with 6 distinct building paths. Tie their fill opacity to a derived state based on total cleared lines.",
+    "Add expo-haptics and expo-av for all requested feedback points (hover, drop, clear).",
+    "Ensure all UI modals (Grid Locked, Shop, Season Pass, Daily Rewards) are styled as premium glassmorphic overlays with neon borders.",
+    "Implement exact Media URLs for the monetization modals as defined in the media section. Do NOT use placeholder images."
+  ]
+}
