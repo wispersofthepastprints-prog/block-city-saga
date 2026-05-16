@@ -30,7 +30,6 @@ const SHAPES: PieceShape[] = [
   [[1, 1, 1, 1]], // 4 horizontal
   [[1], [1], [1], [1]], // 4 vertical
   [[1, 1, 1, 1, 1]], // 5 horizontal
-  [[1], [1], [1], [1], [1]], // 5 vertical
   [[1, 1], [1, 1]], // square 2x2
   [[1, 1, 1], [1, 1, 1], [1, 1, 1]], // square 3x3
   [[1, 0], [1, 1]], // L corner

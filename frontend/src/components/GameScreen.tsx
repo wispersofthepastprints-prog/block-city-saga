@@ -266,9 +266,9 @@ export function GameScreen() {
     const ph = piece.shape.length;
     const pieceWpx = pw * CELL_SIZE + (pw - 1) * CELL_GAP;
     const pieceHpx = ph * CELL_SIZE + (ph - 1) * CELL_GAP;
-    // ghost center is at (absX, absY - 50) due to lift
+    // ghost visual center is at (absX, absY - 70) due to fixed lift in Tray.
     const gx = absX - pieceWpx / 2;
-    const gy = absY - 50 - pieceHpx / 2;
+    const gy = absY - 70 - pieceHpx / 2;
     const localX = gx - gridScreen.current.x - GRID_PAD;
     const localY = gy - gridScreen.current.y - GRID_PAD;
     const col = Math.round(localX / (CELL_SIZE + CELL_GAP));
@@ -698,9 +698,11 @@ export function GameScreen() {
           energy={passActive ? MAX_ENERGY : energy}
           maxEnergy={MAX_ENERGY}
           unlimitedEnergy={passActive}
+          undos={undos}
           onPressCoins={onPressCoins}
           onPressEnergy={onPressEnergy}
           onPressSettings={onPressSettings}
+          onPressUndo={handleUndo}
         />
 
         <View style={styles.skylineWrap}>
@@ -734,19 +736,7 @@ export function GameScreen() {
         </View>
 
         {/* Undo button */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.undoBtn, undos === 0 && { opacity: 0.55 }]}
-            onPress={handleUndo}
-            testID="undo-button"
-          >
-            <Icon name="arrow-undo" size={18} color="#3a86ff" />
-            <Text style={styles.undoText}>UNDO</Text>
-            <View style={styles.undoCount}>
-              <Text style={styles.undoCountText}>{undos}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <View style={{ height: 0 }} />
 
         <Tray
           pieces={pieces}

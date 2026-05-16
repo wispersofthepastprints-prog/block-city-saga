@@ -14,7 +14,7 @@ import { PieceView } from "./PieceView";
 import type { Piece } from "@/src/game/pieces";
 import { haptic } from "@/src/services/audio";
 
-const TRAY_CELL = 26; // tray preview cell size
+const TRAY_CELL = 18; // compact tray preview
 const TRAY_GAP = 2;
 const GHOST_CELL = 36; // matches grid cell
 
@@ -118,11 +118,9 @@ function DraggableSlot({
   const animatedStyle = useAnimatedStyle(() => {
     // Ghost piece is rendered larger when dragging (closer to grid cell size)
     const draggingScale =
-      isDragging.value === 1
-        ? GHOST_CELL / TRAY_CELL
-        : 1;
-    // Translate up by ~50 when dragging to lift above finger
-    const liftY = isDragging.value === 1 ? -50 - (pieceH * (GHOST_CELL - TRAY_CELL)) / 2 : 0;
+      isDragging.value === 1 ? GHOST_CELL / TRAY_CELL : 1;
+    // Fixed lift so finger sits below the ghost piece (matches GameScreen LIFT).
+    const liftY = isDragging.value === 1 ? -70 : 0;
     return {
       transform: [
         { translateX: tx.value },
@@ -154,18 +152,18 @@ const styles = StyleSheet.create({
   tray: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 4,
-    minHeight: 130,
+    paddingHorizontal: 10,
+    paddingTop: 6,
+    paddingBottom: 2,
+    minHeight: 92,
     alignItems: "center",
   },
   slotWrap: {
-    height: 110,
+    height: 84,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
   },

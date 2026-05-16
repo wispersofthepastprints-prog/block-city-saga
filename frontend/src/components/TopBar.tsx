@@ -11,9 +11,11 @@ type Props = {
   energy: number;
   maxEnergy: number;
   unlimitedEnergy: boolean;
+  undos: number;
   onPressCoins: () => void;
   onPressEnergy: () => void;
   onPressSettings: () => void;
+  onPressUndo: () => void;
 };
 
 export function TopBar({
@@ -23,9 +25,11 @@ export function TopBar({
   energy,
   maxEnergy,
   unlimitedEnergy,
+  undos,
   onPressCoins,
   onPressEnergy,
   onPressSettings,
+  onPressUndo,
 }: Props) {
   return (
     <View style={styles.wrap}>
@@ -59,6 +63,15 @@ export function TopBar({
             </Text>
           </View>
         </View>
+        {/* Undo */}
+        <TouchableOpacity
+          style={[styles.undoBlock, undos === 0 && { opacity: 0.55 }]}
+          onPress={onPressUndo}
+          testID="undo-button"
+        >
+          <Icon name="arrow-undo" size={14} color="#3a86ff" />
+          <Text style={styles.undoValue}>{undos}</Text>
+        </TouchableOpacity>
         {/* Coins */}
         <TouchableOpacity
           style={styles.coinsBlock}
@@ -164,6 +177,22 @@ const styles = StyleSheet.create({
   streakValue: {
     color: "#888",
     fontSize: 14,
+    fontWeight: "800",
+  },
+  undoBlock: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(58,134,255,0.1)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(58,134,255,0.25)",
+  },
+  undoValue: {
+    color: "#3a86ff",
+    fontSize: 13,
     fontWeight: "800",
   },
   coinsBlock: {
