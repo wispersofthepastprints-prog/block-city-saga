@@ -14,7 +14,7 @@ import { PieceView } from "./PieceView";
 import type { Piece } from "@/src/game/pieces";
 import { haptic } from "@/src/services/audio";
 
-const TRAY_CELL = 18; // compact tray preview
+const TRAY_CELL = 16; // compact tray preview
 const TRAY_GAP = 2;
 const GHOST_CELL = 36; // matches grid cell
 
@@ -155,11 +155,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 6,
     paddingBottom: 2,
-    minHeight: 92,
+    minHeight: 82,
     alignItems: "center",
   },
   slotWrap: {
-    height: 84,
+    height: 74,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.03)",

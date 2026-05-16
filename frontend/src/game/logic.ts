@@ -71,7 +71,25 @@ export function clearLines(grid: Cell[][]): ClearResult {
   for (const c of colsCleared) {
     for (let r = 0; r < ROWS; r++) next[r][c] = { filled: false, color: null };
   }
-  return { grid: next, rowsCleared, colsCleared };
+  // Apply gravity: all remaining blocks fall to the bottom of each column.
+  return { grid: applyGravity(next), rowsCleared, colsCleared };
+}
+
+// Per-column gravity — for each column, collect filled cells and stack them
+// at the bottom. Empty cells float to the top. Used after line/column clears.
+export function applyGravity(grid: Cell[][]): Cell[][] {
+  const next = emptyGrid();
+  for (let c = 0; c < COLS; c++) {
+    const stack: Cell[] = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (grid[r][c].filled) stack.push({ ...grid[r][c] });
+    }
+    let writeRow = ROWS - 1;
+    for (let i = stack.length - 1; i >= 0; i--, writeRow--) {
+      next[writeRow][c] = stack[i];
+    }
+  }
+  return next;
 }
 
 export function isGridLocked(grid: Cell[][], pieces: (Piece | null)[]): boolean {
