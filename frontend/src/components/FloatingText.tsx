@@ -54,11 +54,10 @@ export function FloatingText({
           top: y,
           color,
           fontSize: size,
-          textShadowColor: color,
+          textShadow: `0 0 12px ${color}`,
         },
         animatedStyle,
       ]}
-      pointerEvents="none"
     >
       {text}
     </Animated.Text>
@@ -70,7 +69,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     fontWeight: "900",
     letterSpacing: -0.5,
-    textShadowRadius: 12,
-    textShadowOffset: { width: 0, height: 0 },
+    pointerEvents: "none",
   },
 });

@@ -47,10 +47,7 @@ export const Block = React.memo(function Block({
           width: size,
           height: size,
           opacity,
-          shadowColor: baseColor,
-          shadowOpacity: glow ? 0.9 : 0.4,
-          shadowRadius: glow ? 12 : 4,
-          shadowOffset: { width: 0, height: 0 },
+          boxShadow: `0 0 ${glow ? 14 : 5}px ${baseColor}${glow ? "e6" : "66"}`,
         },
       ]}
     >

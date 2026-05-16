@@ -11,7 +11,6 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
-  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
@@ -730,13 +729,11 @@ export function GameScreen() {
           />
           {/* danger overlay */}
           <Animated.View
-            pointerEvents="none"
-            style={[styles.dangerOverlay, dangerStyle]}
+            style={[styles.dangerOverlay, dangerStyle, { pointerEvents: "none" }]}
           />
         </View>
 
-        {/* Undo button */}
-        <View style={{ height: 0 }} />
+        {/* Undo lives in TopBar now */}
 
         <Tray
           pieces={pieces}
@@ -869,40 +866,5 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     width: GRID_W,
     height: GRID_H,
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    paddingTop: 8,
-  },
-  undoBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(58,134,255,0.08)",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(58,134,255,0.25)",
-  },
-  undoText: {
-    color: "#3a86ff",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-  },
-  undoCount: {
-    backgroundColor: "#3a86ff",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  undoCountText: {
-    color: "#000",
-    fontSize: 10,
-    fontWeight: "900",
   },
 });

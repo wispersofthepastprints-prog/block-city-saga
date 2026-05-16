@@ -116,9 +116,9 @@ export const GameGrid = React.memo(function GameGrid({
                 left: GRID_PAD + hc.c * (CELL_SIZE + CELL_GAP),
                 top: GRID_PAD + hc.r * (CELL_SIZE + CELL_GAP),
                 opacity: inBounds ? 0.55 : 0,
+                pointerEvents: "none",
               },
             ]}
-            pointerEvents="none"
           >
             <Block
               color={hc.color}
@@ -142,7 +142,6 @@ export const GameGrid = React.memo(function GameGrid({
       {flashRows.map((r) => (
         <View
           key={`fr-${r}`}
-          pointerEvents="none"
           style={[
             styles.flash,
             {
@@ -150,6 +149,7 @@ export const GameGrid = React.memo(function GameGrid({
               top: GRID_PAD + r * (CELL_SIZE + CELL_GAP),
               width: GRID_INNER_W,
               height: CELL_SIZE,
+              pointerEvents: "none",
             },
           ]}
         />
@@ -157,7 +157,6 @@ export const GameGrid = React.memo(function GameGrid({
       {flashCols.map((c) => (
         <View
           key={`fc-${c}`}
-          pointerEvents="none"
           style={[
             styles.flash,
             {

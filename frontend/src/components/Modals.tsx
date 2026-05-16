@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import { Image } from "expo-image";
 import { Icon } from "./Icon";
@@ -508,8 +509,35 @@ export function SettingsModal({
         onToggle={toggleHaptics}
         testID="settings-haptics"
       />
+      <View style={mStyles.aboutBlock}>
+        <Text style={mStyles.aboutTitle}>Block Architect v1.0.0</Text>
+        <Text style={mStyles.aboutSubtitle}>by Emergent Labs</Text>
+        <View style={mStyles.aboutLinks}>
+          <TouchableOpacity
+            onPress={() =>
+              Linking.openURL(
+                "https://blockarchitect.app/privacy"
+              ).catch(() => {})
+            }
+            testID="settings-privacy"
+          >
+            <Text style={mStyles.aboutLink}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={mStyles.aboutDot}>·</Text>
+          <TouchableOpacity
+            onPress={() =>
+              Linking.openURL(
+                "https://blockarchitect.app/terms"
+              ).catch(() => {})
+            }
+            testID="settings-terms"
+          >
+            <Text style={mStyles.aboutLink}>Terms of Service</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
       <TouchableOpacity
-        style={[mStyles.cta, { backgroundColor: "#ff0033", marginTop: 16 }]}
+        style={[mStyles.cta, { backgroundColor: "#ff0033", marginTop: 8 }]}
         onPress={() => {
           haptic.error();
           onRestart();
@@ -601,9 +629,7 @@ const mStyles = StyleSheet.create({
   dayCellToday: {
     borderColor: "#ffbe0b",
     backgroundColor: "rgba(255,190,11,0.1)",
-    shadowColor: "#ffbe0b",
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    boxShadow: "0 0 10px rgba(255,190,11,0.55)",
   },
   dayLabel: {
     color: "#999",
@@ -800,5 +826,35 @@ const mStyles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     backgroundColor: "#fff",
+  },
+  aboutBlock: {
+    alignItems: "center",
+    paddingVertical: 14,
+    marginTop: 6,
+  },
+  aboutTitle: {
+    color: "#aaa",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  aboutSubtitle: {
+    color: "#555",
+    fontSize: 10,
+    marginTop: 2,
+  },
+  aboutLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+  },
+  aboutLink: {
+    color: "#3a86ff",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  aboutDot: {
+    color: "#444",
+    fontSize: 11,
   },
 });

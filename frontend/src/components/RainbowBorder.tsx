@@ -14,6 +14,7 @@ export function RainbowBorder() {
   const t = useSharedValue(0);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability
     t.value = withRepeat(
       withTiming(1, { duration: 4500, easing: Easing.linear }),
       -1,
@@ -28,7 +29,7 @@ export function RainbowBorder() {
   });
 
   return (
-    <View style={styles.wrap} pointerEvents="none">
+    <View style={[styles.wrap, { pointerEvents: "none" }]}>
       <Animated.View style={[styles.inner, animatedStyle]}>
         <LinearGradient
           colors={[

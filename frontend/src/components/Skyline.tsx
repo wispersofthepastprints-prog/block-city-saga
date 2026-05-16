@@ -188,8 +188,7 @@ export function Skyline({ linesCleared, width }: Props) {
 
   return (
     <View
-      style={[styles.wrap, { width: safeWidth, height: SCENE_H * scale }]}
-      pointerEvents="none"
+      style={[styles.wrap, { width: safeWidth, height: SCENE_H * scale, pointerEvents: "none" }]}
     >
       <Svg
         width={safeWidth}

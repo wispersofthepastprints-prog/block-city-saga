@@ -1,4 +1,4 @@
-// Particle burst component — spawns N particles at (x,y) and animates them outward.
+// Particle burst - spawns N particles at (x,y) and animates them outward.
 import React, { useEffect } from "react";
 import { View, StyleSheet } from "react-native";
 import Animated, {
@@ -40,7 +40,10 @@ function Particle({ angle, color, delay = 0 }: ParticleProps) {
     <Animated.View
       style={[
         styles.particle,
-        { backgroundColor: color, shadowColor: color },
+        {
+          backgroundColor: color,
+          boxShadow: `0 0 6px ${color}`,
+        },
         animatedStyle,
       ]}
     />
@@ -62,7 +65,7 @@ export function Burst({ x, y, color, onComplete }: Props) {
 
   const count = 10;
   return (
-    <View style={[styles.wrap, { left: x, top: y }]} pointerEvents="none">
+    <View style={[styles.wrap, { left: x, top: y, pointerEvents: "none" }]}>
       {Array.from({ length: count }).map((_, i) => (
         <Particle
           key={i}
@@ -88,7 +91,5 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginLeft: -4,
     marginTop: -4,
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
   },
 });

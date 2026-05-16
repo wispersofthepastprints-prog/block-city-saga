@@ -36,7 +36,7 @@ export function NeonModal({
               styles.panel,
               {
                 borderColor,
-                shadowColor: borderColor,
+                boxShadow: `0 0 24px ${borderColor}99`,
               },
             ]}
           >
@@ -88,9 +88,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(10,10,20,0.95)",
     borderRadius: 22,
     borderWidth: 1.5,
-    shadowOpacity: 0.6,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 0 },
   },
   header: {
     flexDirection: "row",
