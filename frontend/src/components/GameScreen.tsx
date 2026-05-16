@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
   TouchableOpacity,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
 import Animated, {
   useSharedValue,
@@ -87,6 +87,10 @@ const MAX_ENERGY = 5;
 export function GameScreen() {
   const { width: winW } = useWindowDimensions();
   const SCREEN_W = winW && winW > 0 ? Math.min(Math.max(winW, 320), 430) : 380;
+  const insets = useSafeAreaInsets();
+  // Bottom inset: Android nav bar / iPhone home indicator must not cover the tray.
+  // Add a generous extra cushion so blocks are always thumb-reachable.
+  const bottomPad = Math.max(insets.bottom, 12) + 16;
 
   // Game state
   const [grid, setGrid] = useState<Cell[][]>(() => emptyGrid());
@@ -683,7 +687,7 @@ export function GameScreen() {
   const slotWidth = (SCREEN_W - 24 - 12) / 3;
 
   return (
-    <SafeAreaView style={styles.root} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.root} edges={["top", "left", "right", "bottom"]}>
       <RainbowBorder />
       <Animated.View style={[styles.container, shakeStyle]}>
         <TopBar
@@ -751,8 +755,8 @@ export function GameScreen() {
           onDragEnd={handleDragEnd}
           goldenSkin={passActive}
         />
+        <View style={{ height: bottomPad }} />
       </Animated.View>
-
       {/* Burst & floating texts overlay (positioned absolutely in window coords) */}
       {bursts.map((b) => (
         <Burst

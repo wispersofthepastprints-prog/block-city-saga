@@ -174,7 +174,7 @@ export function startMusic() {
     const uri = makeLoopPad();
     bgMusic = createAudioPlayer({ uri });
     bgMusic.loop = true;
-    bgMusic.volume = 0.15;
+    bgMusic.volume = 0.22;
     bgMusic.play();
   } catch {}
 }
@@ -187,7 +187,7 @@ export function stopMusic() {
 
 function makeLoopPad(): string {
   const sampleRate = 22050;
-  const durationMs = 4000;
+  const durationMs = 8000; // 8 second loop for melodic phrasing
   const samples = Math.floor((durationMs / 1000) * sampleRate);
   const buffer = new ArrayBuffer(44 + samples * 2);
   const view = new DataView(buffer);
@@ -208,15 +208,35 @@ function makeLoopPad(): string {
   writeStr(36, "data");
   view.setUint32(40, samples * 2, true);
 
-  const chord = [110, 138.59, 164.81, 220]; // A minor pad
+  // Upbeat arcade-style loop: synth bass + sparkly arpeggio + soft 4/4 kick.
+  // Key: A minor. BPM: 110 → beat = 0.545s, 16th = 0.136s
+  const bassPattern = [220, 220, 220, 330, 261.63, 261.63, 261.63, 392, 196, 196, 196, 293.66, 220, 220, 330, 392];
+  const arpPattern = [880, 1108.73, 1318.51, 1108.73, 783.99, 987.77, 1174.66, 987.77, 698.46, 880, 1046.5, 880, 880, 1046.5, 1174.66, 1318.51];
+  const beatLen = 8 / 32; // 32 16th notes in 8s = 0.25s per 16th
   for (let i = 0; i < samples; i++) {
     const t = i / sampleRate;
-    let v = 0;
-    for (const f of chord) v += Math.sin(2 * Math.PI * f * t);
-    v /= chord.length;
-    // Slow LFO
-    v *= 0.4 + 0.3 * Math.sin(2 * Math.PI * 0.25 * t);
-    view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, v)) * 12000, true);
+    const step = Math.floor(t / beatLen) % 16;
+    const stepT = (t % beatLen) / beatLen; // 0..1 within step
+    // Bass
+    const bassEnv = Math.exp(-stepT * 3) * 0.55;
+    const bass = Math.sin(2 * Math.PI * bassPattern[step] * t) * bassEnv;
+    // Arpeggio (sparkly)
+    const arpEnv = Math.exp(-stepT * 6) * 0.32;
+    const arp = (Math.sin(2 * Math.PI * arpPattern[step] * t) +
+                 Math.sin(2 * Math.PI * arpPattern[step] * 2 * t) * 0.3) * arpEnv;
+    // Kick (every 8th)
+    const kickStep = Math.floor(t / (beatLen * 2)) % 8;
+    const kickT = (t % (beatLen * 2)) / (beatLen * 2);
+    const isKick = kickStep === 0 || kickStep === 4;
+    const kick = isKick ? Math.sin(2 * Math.PI * (60 + 40 * Math.exp(-kickT * 30)) * t) * Math.exp(-kickT * 8) * 0.5 : 0;
+    // Hi-hat-ish (white noise burst on offbeats)
+    const hatStep = Math.floor(t / beatLen) % 4;
+    const hatT = (t % beatLen) / beatLen;
+    const isHat = hatStep === 2;
+    const hat = isHat ? (Math.random() - 0.5) * Math.exp(-hatT * 18) * 0.18 : 0;
+    let v = bass + arp + kick + hat;
+    v = Math.max(-1, Math.min(1, v));
+    view.setInt16(44 + i * 2, v * 11000, true);
   }
   let binary = "";
   const bytes = new Uint8Array(buffer);
