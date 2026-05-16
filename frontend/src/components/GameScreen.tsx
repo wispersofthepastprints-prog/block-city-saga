@@ -89,8 +89,9 @@ export function GameScreen() {
   const SCREEN_W = winW && winW > 0 ? Math.min(Math.max(winW, 320), 430) : 380;
   const insets = useSafeAreaInsets();
   // Bottom inset: Android nav bar / iPhone home indicator must not cover the tray.
-  // Add a generous extra cushion so blocks are always thumb-reachable.
-  const bottomPad = Math.max(insets.bottom, 12) + 16;
+  // Use a generous floor (60 px) so even when insets.bottom reports 0 (some
+  // Android edge-to-edge devices), the tray stays clear of the nav buttons.
+  const bottomPad = Math.max(insets.bottom + 24, 80);
 
   // Game state
   const [grid, setGrid] = useState<Cell[][]>(() => emptyGrid());
