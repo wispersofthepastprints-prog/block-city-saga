@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "./Icon";
 import { LinearGradient } from "expo-linear-gradient";
 import { NeonModal } from "./NeonModal";
 import { haptic, playSfx } from "@/src/services/audio";
@@ -61,7 +61,7 @@ export function DailyRewardsModal({
               testID={`daily-day-${i}`}
             >
               <Text style={mStyles.dayLabel}>Day {i + 1}</Text>
-              <Ionicons
+              <Icon
                 name="cash"
                 size={20}
                 color={today ? "#ffbe0b" : claimed ? "#06ffa5" : "#666"}
@@ -76,7 +76,7 @@ export function DailyRewardsModal({
                 {amt}
               </Text>
               {claimed && (
-                <Ionicons
+                <Icon
                   name="checkmark-circle"
                   size={14}
                   color="#06ffa5"
@@ -144,7 +144,7 @@ export function ShopModal({
         />
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={mStyles.coinBal} testID="shop-coin-balance">
-            <Ionicons name="cash" size={16} color="#ffbe0b" /> {coins.toLocaleString()}
+            <Icon name="cash" size={16} color="#ffbe0b" /> {coins.toLocaleString()}
           </Text>
           <Text style={mStyles.coinLabel}>YOUR COINS</Text>
         </View>
@@ -166,14 +166,14 @@ export function ShopModal({
             <View
               style={[mStyles.shopIcon, { backgroundColor: item.color + "22" }]}
             >
-              <Ionicons name={item.icon as any} size={22} color={item.color} />
+              <Icon name={item.icon as any} size={22} color={item.color} />
             </View>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={mStyles.shopItemName}>{item.name}</Text>
               <Text style={mStyles.shopItemSub}>Tap to purchase</Text>
             </View>
             <View style={mStyles.shopPrice}>
-              <Ionicons name="cash" size={12} color="#ffbe0b" />
+              <Icon name="cash" size={12} color="#ffbe0b" />
               <Text style={mStyles.shopPriceText}>{item.price}</Text>
             </View>
           </TouchableOpacity>
@@ -187,7 +187,7 @@ export function ShopModal({
         }}
         testID="shop-open-pass"
       >
-        <Ionicons name="star" size={16} color="#ffbe0b" />
+        <Icon name="star" size={16} color="#ffbe0b" />
         <Text style={mStyles.passUpsellText}>
           Skip the grind — Season Pass for unlimited energy!
         </Text>
@@ -280,7 +280,7 @@ function PassPerk({
           { backgroundColor: color + "22", borderColor: color + "55" },
         ]}
       >
-        <Ionicons name={icon as any} size={16} color={color} />
+        <Icon name={icon as any} size={16} color={color} />
       </View>
       <Text style={mStyles.perkText}>{text}</Text>
     </View>
@@ -340,7 +340,7 @@ export function GameOverModal({
           <ActivityIndicator color="#000" />
         ) : (
           <>
-            <Ionicons name="play-circle" size={20} color="#000" />
+            <Icon name="play-circle" size={20} color="#000" />
             <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
               WATCH AD — CONTINUE
             </Text>
@@ -360,7 +360,7 @@ export function GameOverModal({
           onPress={onBuyPass}
           testID="gameover-buy-pass"
         >
-          <Ionicons name="star" size={16} color="#000" />
+          <Icon name="star" size={16} color="#000" />
           <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
             BUY PASS — $4.99/MO
           </Text>
@@ -419,7 +419,7 @@ export function EnergyModal({
           <ActivityIndicator color="#000" />
         ) : (
           <>
-            <Ionicons name="play-circle" size={20} color="#000" />
+            <Icon name="play-circle" size={20} color="#000" />
             <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
               WATCH AD — FREE REFILL
             </Text>
@@ -435,7 +435,7 @@ export function EnergyModal({
         onPress={onRefillCoins}
         testID="energy-refill-coins"
       >
-        <Ionicons name="cash" size={16} color="#fff" />
+        <Icon name="cash" size={16} color="#fff" />
         <Text style={[mStyles.ctaText, { marginLeft: 6 }]}>
           40 COINS — REFILL
         </Text>
@@ -446,7 +446,7 @@ export function EnergyModal({
           onPress={onBuyPass}
           testID="energy-buy-pass"
         >
-          <Ionicons name="star" size={16} color="#000" />
+          <Icon name="star" size={16} color="#000" />
           <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
             UNLIMITED — SEASON PASS
           </Text>
@@ -516,7 +516,7 @@ export function SettingsModal({
         }}
         testID="settings-restart"
       >
-        <Ionicons name="refresh" size={16} color="#fff" />
+        <Icon name="refresh" size={16} color="#fff" />
         <Text style={[mStyles.ctaText, { marginLeft: 6 }]}>RESTART GAME</Text>
       </TouchableOpacity>
     </NeonModal>
@@ -545,7 +545,7 @@ function SettingsRow({
       }}
       testID={testID}
     >
-      <Ionicons name={icon as any} size={20} color="#aaa" />
+      <Icon name={icon as any} size={20} color="#aaa" />
       <Text style={mStyles.settingsLabel}>{label}</Text>
       <View
         style={[

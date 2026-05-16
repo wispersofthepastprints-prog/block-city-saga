@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "./Icon";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -735,7 +735,7 @@ export function GameScreen() {
             onPress={handleUndo}
             testID="undo-button"
           >
-            <Ionicons name="arrow-undo" size={18} color="#3a86ff" />
+            <Icon name="arrow-undo" size={18} color="#3a86ff" />
             <Text style={styles.undoText}>UNDO</Text>
             <View style={styles.undoCount}>
               <Text style={styles.undoCountText}>{undos}</Text>

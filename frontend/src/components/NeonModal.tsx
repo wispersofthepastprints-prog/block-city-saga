@@ -2,7 +2,7 @@
 import React, { ReactNode } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { BlurView } from "expo-blur";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "./Icon";
 
 type Props = {
   visible: boolean;
@@ -55,7 +55,7 @@ export function NeonModal({
                     style={styles.closeBtn}
                     testID="modal-close"
                   >
-                    <Ionicons name="close" size={22} color="#aaa" />
+                    <Icon name="close" size={22} color="#aaa" />
                   </TouchableOpacity>
                 )}
               </View>

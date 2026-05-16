@@ -1,7 +1,7 @@
 // Top bar: Score | Streak (flame) | Coins + Energy bar
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Icon } from "./Icon";
 import { LinearGradient } from "expo-linear-gradient";
 
 type Props = {
@@ -44,7 +44,7 @@ export function TopBar({
         {/* Streak */}
         <View style={styles.streakBlock} testID="topbar-streak">
           <View style={styles.streakInner}>
-            <Ionicons
+            <Icon
               name="flame"
               size={16}
               color={streak >= 3 ? "#ff9500" : "#555"}
@@ -65,9 +65,9 @@ export function TopBar({
           onPress={onPressCoins}
           testID="topbar-coins"
         >
-          <Ionicons name="cash" size={14} color="#ffbe0b" />
+          <Icon name="cash" size={14} color="#ffbe0b" />
           <Text style={styles.coinsValue}>{coins.toLocaleString()}</Text>
-          <Ionicons
+          <Icon
             name="add-circle"
             size={16}
             color="#06ffa5"
@@ -80,7 +80,7 @@ export function TopBar({
           onPress={onPressSettings}
           testID="topbar-settings"
         >
-          <Ionicons name="settings-outline" size={18} color="#aaa" />
+          <Icon name="settings-outline" size={18} color="#aaa" />
         </TouchableOpacity>
       </View>
       {/* Energy bar */}
@@ -90,7 +90,7 @@ export function TopBar({
         activeOpacity={0.7}
         testID="topbar-energy"
       >
-        <Ionicons name="flash" size={12} color="#ffbe0b" />
+        <Icon name="flash" size={12} color="#ffbe0b" />
         <View style={styles.energyBar}>
           {Array.from({ length: maxEnergy }).map((_, i) => (
             <View
