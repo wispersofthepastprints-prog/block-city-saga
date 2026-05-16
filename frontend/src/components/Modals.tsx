@@ -217,7 +217,7 @@ export function SeasonPassModal({
     <NeonModal
       visible={visible}
       onClose={onClose}
-      title="SEASON PASS"
+      title="TETRIS ARCHITECT PRO"
       borderColor="#ffbe0b"
     >
       <Image
@@ -252,13 +252,14 @@ export function SeasonPassModal({
             <ActivityIndicator color="#000" />
           ) : (
             <Text style={[mStyles.ctaText, { color: "#000" }]}>
-              SUBSCRIBE — $4.99/MO
+              CHOOSE A PLAN
             </Text>
           )}
         </TouchableOpacity>
       )}
       <Text style={mStyles.disclaimer}>
-        Auto-renews monthly. Cancel anytime. Billing via Google Play.
+        Available as Lifetime, Yearly, or Monthly. Auto-renewing subscriptions
+        cancel anytime. Billing via Google Play.
       </Text>
     </NeonModal>
   );
@@ -363,7 +364,7 @@ export function GameOverModal({
         >
           <Icon name="star" size={16} color="#000" />
           <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
-            BUY PASS — $4.99/MO
+            UNLOCK PRO
           </Text>
         </TouchableOpacity>
       )}
@@ -449,7 +450,7 @@ export function EnergyModal({
         >
           <Icon name="star" size={16} color="#000" />
           <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
-            UNLIMITED — SEASON PASS
+            UNLIMITED — UNLOCK PRO
           </Text>
         </TouchableOpacity>
       )}
@@ -470,6 +471,7 @@ export function SettingsModal({
   toggleMusic,
   toggleHaptics,
   onRestart,
+  onManageSubscription,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -480,6 +482,7 @@ export function SettingsModal({
   toggleMusic: () => void;
   toggleHaptics: () => void;
   onRestart: () => void;
+  onManageSubscription?: () => void;
 }) {
   return (
     <NeonModal
@@ -510,13 +513,13 @@ export function SettingsModal({
         testID="settings-haptics"
       />
       <View style={mStyles.aboutBlock}>
-        <Text style={mStyles.aboutTitle}>Block Architect v1.0.0</Text>
-        <Text style={mStyles.aboutSubtitle}>by Emergent Labs</Text>
+        <Text style={mStyles.aboutTitle}>Tetris Architect v1.0.0</Text>
+        <Text style={mStyles.aboutSubtitle}>by wispersofthepast</Text>
         <View style={mStyles.aboutLinks}>
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://blockarchitect.app/privacy"
+                "https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/privacy-policy.html"
               ).catch(() => {})
             }
             testID="settings-privacy"
@@ -527,7 +530,7 @@ export function SettingsModal({
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://blockarchitect.app/terms"
+                "https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/terms-of-service.html"
               ).catch(() => {})
             }
             testID="settings-terms"
@@ -536,6 +539,21 @@ export function SettingsModal({
           </TouchableOpacity>
         </View>
       </View>
+      {onManageSubscription && (
+        <TouchableOpacity
+          style={[mStyles.cta, { backgroundColor: "#3a86ff", marginTop: 4 }]}
+          onPress={() => {
+            haptic.selection();
+            onManageSubscription();
+          }}
+          testID="settings-manage-sub"
+        >
+          <Icon name="diamond" size={16} color="#fff" />
+          <Text style={[mStyles.ctaText, { marginLeft: 6 }]}>
+            MANAGE SUBSCRIPTION
+          </Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         style={[mStyles.cta, { backgroundColor: "#ff0033", marginTop: 8 }]}
         onPress={() => {

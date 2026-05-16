@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Block Architect",
-    "slug": "block-architect",
+    "name": "Tetris Architect",
+    "slug": "tetris-architect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "blockarchitect",
+    "scheme": "tetrisarchitect",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "primaryColor": "#ff006e",
-    "description": "Block Architect — drag, drop, clear & build a neon city. A premium, free-to-play block puzzle.",
+    "description": "Tetris Architect — drag, drop, clear & build a neon city. A premium, free-to-play block puzzle.",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.emergent.blockarchitect",
+      "bundleIdentifier": "com.emergent.tetrisarchitect",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
@@ -24,10 +24,11 @@
         "backgroundColor": "#050510"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.emergent.blockarchitect",
+      "package": "com.emergent.tetrisarchitect",
       "versionCode": 1,
       "permissions": [
-        "VIBRATE"
+        "VIBRATE",
+        "com.google.android.gms.permission.AD_ID"
       ],
       "blockedPermissions": [
         "ACCESS_COARSE_LOCATION",
@@ -47,6 +48,7 @@
     "plugins": [
       "expo-router",
       "expo-audio",
+      "expo-dev-client",
       [
         "expo-splash-screen",
         {
@@ -55,8 +57,19 @@
           "resizeMode": "contain",
           "backgroundColor": "#050510"
         }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-1508365322358813~3278044849",
+          "userTrackingUsageDescription": "This identifier is used to deliver personalized ads."
+        }
       ]
     ],
+    "react-native-google-mobile-ads": {
+      "android_app_id": "ca-app-pub-1508365322358813~3278044849",
+      "user_tracking_usage_description": "This identifier is used to deliver personalized ads."
+    },
     "experiments": {
       "typedRoutes": true
     },

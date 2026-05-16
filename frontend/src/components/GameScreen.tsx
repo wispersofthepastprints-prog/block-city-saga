@@ -64,7 +64,7 @@ import {
   setSfxEnabled,
   setMusicEnabled,
 } from "@/src/services/audio";
-import { showRewardedAd, purchaseProduct } from "@/src/services/monetization";
+import { showRewardedAd, presentProPaywall, presentCustomerCenter, hasProEntitlement, addEntitlementListener } from "@/src/services/monetization";
 
 const STORAGE_KEYS = {
   HIGH_SCORE: "ba_high_score",
@@ -203,8 +203,21 @@ export function GameScreen() {
       setTimeout(() => {
         if ((mus as boolean) ?? true) startMusic();
       }, 500);
+
+      // RevenueCat: check entitlement and subscribe to live updates.
+      try {
+        const has = await hasProEntitlement();
+        if (has) setPassActive(true);
+      } catch {}
     })();
-    return () => stopMusic();
+    let unsub: (() => void) | undefined;
+    addEntitlementListener((hasPro) => setPassActive(hasPro)).then((u) => {
+      unsub = u;
+    });
+    return () => {
+      stopMusic();
+      unsub?.();
+    };
   }, []);
 
   // Persist on changes
@@ -827,6 +840,7 @@ export function GameScreen() {
         toggleMusic={toggleMusic}
         toggleHaptics={toggleHaptics}
         onRestart={handleRestart}
+        onManageSubscription={passActive ? handleManageSubscription : undefined}
       />
     </SafeAreaView>
   );
