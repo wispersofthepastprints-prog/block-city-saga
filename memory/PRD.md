@@ -1,209 +1,160 @@
-# Block Architect — Product Requirements & Publishing Guide
+# Tetris Architect — Product Requirements & Publishing Guide
 
 ## Overview
-**Block Architect** is a portrait-only React Native / Expo SDK 54 mobile puzzle game targeting **Google Play Store (Android)**. Tetris-like pieces are drag-and-dropped onto an 8×10 grid; clearing rows triggers Tetris-style gravity, particle bursts, combo multipliers, and progressive unlock of a neon city skyline that cycles through day & night.
+**Tetris Architect** is a portrait-only React Native / Expo SDK 54 mobile puzzle game for **Google Play Store (Android)**. Tetris-like pieces are drag-and-dropped onto an 8 × 10 grid; clearing rows triggers Tetris-style gravity, particle bursts, combo multipliers, and progressive unlock of a neon city skyline that cycles through day & night.
+
+Package: `com.emergent.tetrisarchitect`
+Version: 1.0.0 (versionCode 1)
 
 ## Tech Stack
-- **Framework**: Expo SDK 54 + expo-router (file-based routing)
+- **Framework**: Expo SDK 54 + expo-router (file-based)
 - **Language**: TypeScript
-- **Rendering**: React Native (no web-specific deps), `react-native-svg` for skyline
-- **Animations**: `react-native-reanimated` 4 + `react-native-gesture-handler` for 60 fps drag-drop & micro-animations
-- **Audio**: `expo-audio` — synthesised WAV SFX + 8-second arcade-loop atmospheric music
-- **Haptics**: `expo-haptics` (light / medium / heavy / success / error / selection)
+- **Rendering**: React Native, `react-native-svg` for skyline
+- **Animations**: `react-native-reanimated` 4 + `react-native-gesture-handler`
+- **Audio**: `expo-audio` — synthesised WAV SFX + 8 s arcade-loop music
+- **Haptics**: `expo-haptics`
 - **Storage**: AsyncStorage via `@/src/utils/storage`
-- **Icons**: in-house `Icon` component using unicode glyphs (avoids `@expo/vector-icons` Expo Go font bugs)
-- **No backend**: 100 % offline-capable
+- **Icons**: in-house `Icon` component using unicode glyphs
+- **Monetization**: RevenueCat (`react-native-purchases` + `react-native-purchases-ui`) + Google AdMob (`react-native-google-mobile-ads`)
 
-## Gameplay
-- **Grid**: 8 columns × 10 rows, 36 px cells, 3 px gap
-- **Pieces**: 3 random pieces spawn in a compact bottom tray; new set spawns when all 3 placed
-- **Drag-drop**: floating 3D ghost lifts 70 px above finger; translucent on-grid preview; green glow valid / red overlay invalid; snap-back on invalid release
-- **Line clears**: full row OR column clears, **then per-column gravity collapses remaining blocks to the bottom** (Tetris-style)
-- **Scoring**: cells × 5 base; row/col clear = clears × 100 × combo × passMul; cascading clears chain combo; 2× score active during Season Pass
-- **Streak**: increments on every line clear; flame icon ignites at 3+
-- **Grid Locked**: shows Game Over modal with Watch Ad / Continue (50 c) / Buy Pass / Restart
-- **Danger overlay**: pulsing red border when grid >75 % full
+## Monetization Architecture
+The monetization service is split across **platform-specific files** so the web preview never imports native-only SDKs:
+
+| File | Used by | Behaviour |
+|---|---|---|
+| `src/services/monetization.ts` | Web preview (Metro picks on `Platform.OS === "web"`) | Pure mocks — every function resolves immediately |
+| `src/services/monetization.native.ts` | Android / iOS dev-client + standalone (`Platform.OS !== "web"`) | Real RevenueCat & AdMob, with `Constants.appOwnership === "expo"` graceful-fallback for Expo Go |
+
+Public API (identical in both):
+- `initializeMonetization()` — called once in `app/_layout.tsx`
+- `presentProPaywall()` — shows the RevenueCat remote-configured Paywall (lifetime / yearly / monthly)
+- `presentCustomerCenter()` — shows the RevenueCat-hosted "Manage Subscription" screen
+- `hasProEntitlement()` — checks for the **"Tetris Architect Pro"** entitlement
+- `addEntitlementListener(cb)` — live updates whenever subscription state changes
+- `purchaseProduct(id)` — direct purchase fallback (rarely used; paywall preferred)
+- `restorePurchases()` — for "Restore purchases" button
+- `showRewardedAd()` — preloaded AdMob rewarded ad; promise resolves with `{ rewarded }`
+
+### Environment variables (in `/app/frontend/.env`)
+| Var | Value | Notes |
+|---|---|---|
+| `EXPO_PUBLIC_RC_ANDROID_KEY` | `test_jJShMostMnjSFsAjSNGQINATFaR` | **TEST KEY — sandbox only.** Replace with the `goog_…` production key before launching to public Play Store track. |
+| `EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID` | `ca-app-pub-1508365322358813/7905509396` | Production rewarded unit; the code uses `TestIds.REWARDED` in `__DEV__` so you can develop without burning real impressions. |
+
+### `app.json` config
+- AdMob Android App ID: `ca-app-pub-1508365322358813~3278044849`
+- AdMob iOS App ID: placeholder (not targeting iOS yet)
+- Plugin: `react-native-google-mobile-ads` (handles native AdMob init)
+- Plugin: `expo-dev-client` (allows building a dev-client APK)
+- Plugin: `expo-audio`
+- Plugin: `expo-router`
+- Plugin: `expo-splash-screen`
+- `android.permissions`: `VIBRATE`, `com.google.android.gms.permission.AD_ID`
+- All other permissions explicitly **`blockedPermissions`** (Play Console hygiene)
+
+## Game Loop
+- **Grid**: 8 × 10, 36 px cells, 3 px gap
+- **Pieces**: 3 random pieces in compact bottom tray; new set spawns when all 3 placed
+- **Drag-drop**: floating 3D ghost lifts 70 px above finger, translucent on-grid preview, snap-back on invalid release
+- **Line clears**: full row OR column clears, **then per-column gravity collapses remaining blocks** (Tetris-style)
+- **Scoring**: cells × 5 base; row/col = clears × 100 × combo × passMul; 2× during Pro
+- **Streak**: flame icon at 3+ consecutive clears
+- **Grid Locked**: Watch Ad / Continue (50 c) / Unlock Pro / Restart
+- **Danger overlay**: pulsing red border at >75 % fill
 
 ## City Skyline (meta-progression)
 - 6 buildings unlock at lines cleared: **5, 12, 20, 28, 38, 48** (per 60-line cycle)
-- All 6 unlocked → "City Complete! +1000" bonus, scene resets, loop continues
-- **Day / Night cycle**: 4-minute period; sky smoothly transitions through 7 color stops (midnight → pre-dawn → dawn pink-purple → noon teal → dusk pink-amber → twilight → midnight)
-- **Stars** fade in at night; **horizon glow** band brightens at dawn / dusk; **windows** light up warm yellow at night (per-window deterministic pattern)
+- All 6 unlocked → "City Complete! +1000" bonus
+- **Day / Night cycle**: 4-min period, 7 sky color stops (midnight → pre-dawn → dawn pink-purple → noon teal → dusk pink-amber → twilight → midnight)
+- Stars fade in at night; horizon glow at dawn/dusk; building windows light up warm yellow at night
 
-## Monetization UI
-- **Top bar**: Score · 🔥 Streak · ↶ Undo · ◉ Coins · ⚙ Settings + 5-segment Energy bar
-- **Daily Rewards**: 7-day calendar (20, 30, 50, 75, 100, 150, 200) auto-shown on first launch of a new calendar day
-- **Shop**: 4 consumables — Hints 15 c, Undos 25 c (gives +3), Hammer 60 c, Energy Refill 40 c
-- **Season Pass** `$4.99/month`: 2× scene progress, golden block skins, unlimited energy, no ads (pushed in Shop footer, Game-Over modal, Energy modal)
-- **Undo**: 3 free per session; tapping at 0 opens Shop
+## Tetris Architect Pro (RevenueCat entitlement)
+- Three offerings: **Lifetime**, **Yearly**, **Monthly** — shown via the RevenueCat Paywall UI
+- Perks: 2× scene progress, **golden block skins**, unlimited energy, no ads, exclusive daily rewards
+- Customer Center accessible from Settings → **MANAGE SUBSCRIPTION** (only shown when subscribed)
+- Aggressive but tasteful upsells in: Shop footer, Game-Over modal, Energy modal
 
 ## Audio / Haptics
-- **SFX (priority)**: synthesised WAVs for tap, drop, invalid, line clear, combo, bonus, coin — no external assets
-- **Music**: 8-second arcade loop at 110 BPM (synth bass, sparkly arpeggio, four-on-the-floor kick, offbeat hi-hat) at 22 % volume — toggleable
-- **Haptics**: every interaction tactile — toggleable
+- **SFX**: synthesised WAVs for tap, drop, invalid, line clear, combo, bonus, coin
+- **Music**: 8-second arcade loop at 110 BPM (synth bass + sparkly arpeggio + 4/4 kick + offbeat hi-hat) at 22 % volume — toggleable
+- **Haptics**: every interaction — toggleable
 
-## Persistence
-All on-device via AsyncStorage:
-- `ba_high_score`, `ba_coins`, `ba_undos`, `ba_energy`, `ba_pass_active`, `ba_lines`
-- `ba_daily_day`, `ba_daily_date` (rolling 7-day calendar)
-- `ba_sfx`, `ba_music`, `ba_haptics` (settings)
+## Compliance
+- **Privacy Policy**: https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/privacy-policy.html
+- **Terms of Service**: https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/terms-of-service.html
+- Both linked in Settings modal as required by Play Store IAP/ads policy
 
 ---
 
-# 🚀 Google Play Store Publishing Guide
+# 🚀 Final Path to Play Store
 
-## ✅ What's already production-ready
-| Item | Status | Location |
-|---|---|---|
-| Portrait orientation lock | ✅ | `app.json` `orientation: portrait` |
-| Dark UI theme | ✅ | `userInterfaceStyle: dark` |
-| App icon + adaptive icon | ✅ | `assets/images/icon.png`, `adaptive-icon.png` |
-| Splash screen | ✅ | `expo-splash-screen` plugin |
-| Package name | ✅ | `com.emergent.blockarchitect` |
-| Bundle identifier | ✅ | `com.emergent.blockarchitect` |
-| Version 1.0.0, versionCode 1 | ✅ | `app.json` |
-| New Architecture (TurboModules) | ✅ | `newArchEnabled: true` |
-| Permissions minimised | ✅ | only `VIBRATE`; all others blocked |
-| Privacy / Terms links in Settings | ✅ | `Modals.tsx` SettingsModal |
-| `eas.json` build profiles | ✅ | dev / preview (APK) / production (AAB) |
-| Edge-to-edge disabled | ✅ | so tray pieces clear nav-bar |
-| Local-only data (no PII, no network) | ✅ | AsyncStorage only |
-| No deprecated style props | ✅ | all `shadow*`/`textShadow*`/`pointerEvents` migrated |
+## What's done (in this codebase)
+- ✅ Package name `com.emergent.tetrisarchitect`, app name "Tetris Architect"
+- ✅ Real RevenueCat + AdMob wired into `monetization.native.ts`
+- ✅ Web-safe stub `monetization.ts` keeps the preview working
+- ✅ AdMob plugin + App IDs configured in `app.json`
+- ✅ Privacy Policy + Terms URLs live in Settings modal
+- ✅ "MANAGE SUBSCRIPTION" button → Customer Center (when Pro is active)
+- ✅ "CHOOSE A PLAN" button on Pro modal → Paywall with all 3 SKUs
+- ✅ Daily rewards, energy bar, shop, undo, streak, gravity, day-night cycle, modals, audio, haptics
+- ✅ Permissions hardened (`VIBRATE`, `AD_ID` only; everything else explicitly blocked)
+- ✅ All deprecation warnings cleaned (`shadow*`, `textShadow*`, `pointerEvents`)
+- ✅ `eas.json` build profiles (dev / preview / production)
 
-## 🔧 What you must complete before submission
+## What you must do before submitting (one-time, ~3 hours)
 
-### 1. Register / configure Expo + Google Play accounts (15 min)
-- Run `eas login` once
-- `eas init --id <projectId>` then paste the EAS project ID into `app.json` → `extra.eas.projectId`
-- Create a Google Play Console developer account ($25 one-time)
-- Create the app in Play Console with package `com.emergent.blockarchitect`
+### A. RevenueCat dashboard setup (15 min)
+1. Log in at https://app.revenuecat.com
+2. Create project "Tetris Architect" → add **Google Play** app with package `com.emergent.tetrisarchitect`
+3. Under **Entitlements**, create one entitlement with identifier exactly **`Tetris Architect Pro`**
+4. Under **Products** (or via the Play Console import), add **three products** with IDs `lifetime`, `yearly`, `monthly` — attach each to the `Tetris Architect Pro` entitlement
+5. Under **Offerings**, set the current offering to include all three packages
+6. **Paywalls** → Create a Paywall for the current offering with the visual template you prefer. This is what `presentProPaywall()` will display.
+7. When ready for production: copy your **`goog_…` Android SDK key** (Settings → API keys), and replace `EXPO_PUBLIC_RC_ANDROID_KEY` in `/app/frontend/.env`
 
-### 2. Replace placeholder Privacy & Terms URLs (5 min)
-Open `/app/frontend/src/components/Modals.tsx` and replace:
-- `https://blockarchitect.app/privacy` → your actual privacy policy URL
-- `https://blockarchitect.app/terms` → your actual terms URL
+### B. Google Play Console setup (45 min)
+1. Sign up: https://play.google.com/console ($25 one-time)
+2. Create app "Tetris Architect" → package `com.emergent.tetrisarchitect` → Game → Free → with ads + IAP
+3. Under **Monetize → Products**:
+   - Subscription product `monthly` (auto-renewing, base plan $4.99 / month)
+   - Subscription product `yearly` (auto-renewing, base plan $39.99 / year)
+   - In-app product `lifetime` (one-time, $79.99) — managed product, not consumable
+4. Link them to RevenueCat (in RevenueCat dashboard → Google Play Service Account JSON upload)
+5. **Store listing**: title (30 chars), short description (80 chars), full description (4000 chars), icon 512×512, feature graphic 1024×500, 2-8 phone screenshots
+6. **Content rating** (IARC questionnaire): puzzle game, no objectionable content → rated E
+7. **Target audience**: 13+
+8. **Data Safety**: declare AsyncStorage, no PII, IAP via Google Play, AdMob ads, advertising ID usage
+9. **Privacy Policy URL**: https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/privacy-policy.html
+10. **App access**: "All functionality is available without restrictions"
+11. **Ads**: yes, contains ads
 
-Both must be publicly accessible HTTPS pages. Easiest: host on GitHub Pages, Notion, or a free static site.
-Mandatory under Google Play policies because the app has IAP and (planned) ads.
+### C. AdMob production setup (10 min)
+1. https://admob.google.com → add app with Play Store URL
+2. The App ID `ca-app-pub-1508365322358813~3278044849` is already wired into `app.json`
+3. The Rewarded Unit ID `ca-app-pub-1508365322358813/7905509396` is already in `/app/frontend/.env`
+4. Add your dev phone as a **test device** in AdMob settings so you don't rack up real impressions
+5. (Optional) link AdMob to a Firebase project for revenue + retention analytics
 
-### 3. Wire real Google Play Billing (Season Pass + coin packs) — ~1 hour
-Currently `/app/frontend/src/services/monetization.ts` mocks all purchases (resolves after 1 s). To go live:
-
+### D. Build & test (30 min)
 ```bash
 cd /app/frontend
-npx expo install react-native-purchases expo-dev-client
-```
-
-Add the plugin to `app.json` → `plugins`:
-```json
-["react-native-purchases", {}]
-```
-
-Sign up at https://www.revenuecat.com (free up to $10k MTR) and:
-1. Create a "Block Architect" project; add Android app with package `com.emergent.blockarchitect`
-2. Create a subscription product `block_architect_season_pass` ($4.99/mo monthly base plan) in Play Console; link it to RevenueCat as entitlement `season_pass`
-3. (Optional) consumable products: `coins_small`, `coins_medium`, `coins_large`
-4. Copy your **Android public SDK key** (starts with `goog_`)
-
-Replace the mock body of `monetization.ts` with:
-```ts
-import Purchases from "react-native-purchases";
-
-export async function purchaseProduct(productId) {
-  const offerings = await Purchases.getOfferings();
-  const pkg = offerings.current?.availablePackages.find(p => p.identifier === productId);
-  if (!pkg) return { success: false, productId };
-  try {
-    const { customerInfo } = await Purchases.purchasePackage(pkg);
-    const success = customerInfo.entitlements.active.season_pass !== undefined;
-    return { success, productId };
-  } catch { return { success: false, productId }; }
-}
-```
-
-And in `_layout.tsx` initialise once:
-```ts
-import Purchases from "react-native-purchases";
-Purchases.configure({ apiKey: "goog_xxx..." });
-```
-
-### 4. Wire AdMob rewarded ads (energy refill + game-over continue) — ~30 min
-```bash
-npx expo install react-native-google-mobile-ads
-```
-
-In `app.json` → root `plugins`:
-```json
-["react-native-google-mobile-ads", {
-  "androidAppId": "ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY"
-}]
-```
-
-Get the AdMob App ID + Rewarded Ad Unit ID from https://admob.google.com (free):
-1. Create app "Block Architect" → Android, link to Play Console
-2. Create one **Rewarded** ad unit → note its ID `ca-app-pub-…/…`
-3. Add **test device IDs** during development
-
-Replace `showRewardedAd` in `monetization.ts`:
-```ts
-import { RewardedAd, RewardedAdEventType, TestIds } from "react-native-google-mobile-ads";
-const unit = __DEV__ ? TestIds.REWARDED : "ca-app-pub-…/…";
-export async function showRewardedAd() {
-  return new Promise(resolve => {
-    const ad = RewardedAd.createForAdRequest(unit);
-    let rewarded = false;
-    ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => (rewarded = true));
-    ad.addAdEventListener("closed", () => resolve({ rewarded }));
-    ad.load();
-    ad.addAdEventListener(RewardedAdEventType.LOADED, () => ad.show());
-  });
-}
-```
-
-### 5. Generate a dev client and test on a real device — ~20 min
-```bash
+eas login          # uses your expo.dev account
+eas init           # generates a project ID — paste it into app.json → extra.eas.projectId
 eas build --profile development --platform android
 ```
-Install the resulting APK → side-load → log into the Expo Go-replacement dev client → test the real IAP + Ads end-to-end.
+Download the APK from the build URL, install on your phone, open it, and verify:
+- Drag/drop & gameplay
+- Pro modal "CHOOSE A PLAN" → opens the real RevenueCat Paywall with 3 products
+- Watch Ad buttons → show a real AdMob test ad → grant energy / continue
+- Settings → "MANAGE SUBSCRIPTION" (after a sandbox purchase) → opens Customer Center
 
-### 6. Build the release AAB — ~15 min
-```bash
-eas build --profile production --platform android
-```
-This produces an `.aab` (Android App Bundle, mandatory for Play Store since Aug 2021). Auto-increments `versionCode`.
+### E. Production AAB & Play submission (~1 hour + 3-7 day review)
+1. Make sure you've swapped the `test_…` RevenueCat key for a `goog_…` key in `.env`
+2. `eas build --profile production --platform android`  → produces `.aab`
+3. In Play Console → Internal Testing → upload the AAB → add internal testers → wait ~2 hours
+4. Test on a real device with a real Google account
+5. Promote Internal → Closed Testing → Production
+6. Submit for review (3-7 days typical)
 
-### 7. Submit to Play Console — ~30 min
-- Upload the AAB to **Internal Testing** track first
-- Fill in **store listing**: title, short description, full description, screenshots (at least 2 phone screenshots 16:9 or 9:16), feature graphic 1024×500, app icon 512×512
-- Fill in **Content rating** (E for Everyone — has no objectionable content, includes IAP + ads disclosure)
-- Fill in **Data Safety** form: declare AsyncStorage usage, no PII collected, IAP via Google Play, AdMob ads
-- Fill in **Privacy Policy URL** (must match the one inside the Settings modal)
-- Add at least one internal tester email, push to Internal Testing
-- After internal testing passes → promote to **Closed Testing** → then **Production**
-
-### 8. Optional polish before 1.0 launch
-- Add 2-3 phone screenshots showcasing skyline at day + skyline at night + a combo clear
-- Record a 30 s gameplay video for the Play Store listing
-- Create a 1024×500 feature graphic (use any image editor; export the in-game skyline as PNG)
-- Set up `appsflyer` or `Firebase Analytics` for attribution if you plan paid UA later
-- Add Crashlytics (`@sentry/react-native`) before scaling
-
-## 📁 Key files
-- `/app/frontend/app/_layout.tsx` — Gesture root + safe-area
-- `/app/frontend/app/index.tsx` — entry, renders `GameScreen`
-- `/app/frontend/src/components/GameScreen.tsx` — orchestrator (state, drag callbacks, modals)
-- `/app/frontend/src/components/GameGrid.tsx` — 8×10 grid + hover overlay + flash anim
-- `/app/frontend/src/components/Tray.tsx` — draggable tray slots (Reanimated/Gesture)
-- `/app/frontend/src/components/Skyline.tsx` — SVG skyline + day/night cycle
-- `/app/frontend/src/components/Block.tsx` — 3D-beveled cell
-- `/app/frontend/src/components/Modals.tsx` — Daily / Shop / Pass / Game Over / Energy / Settings
-- `/app/frontend/src/components/Icon.tsx` — unicode-glyph icon component
-- `/app/frontend/src/components/Burst.tsx`, `FloatingText.tsx`, `RainbowBorder.tsx`, `TopBar.tsx`
-- `/app/frontend/src/game/pieces.ts`, `logic.ts` (includes `applyGravity`)
-- `/app/frontend/src/services/audio.ts` — synthesised SFX + arcade-loop music
-- `/app/frontend/src/services/monetization.ts` — IAP/Ads abstraction (currently mocked)
-- `/app/frontend/app.json` — production-ready manifest
-- `/app/frontend/eas.json` — EAS build profiles
-
-## 💡 Smart business enhancement
-**Season-Pass-driven retention loop** — the Pass is surfaced contextually (Game Over, Energy depleted, Shop footer) and visually elevated with gold accents. The Golden Block Skin cosmetic is the carrot for non-monetary players and instantly visible on every placement once subscribed, creating a daily visible reminder of value and an envy-driver in shared screenshots. Combined with the 7-day Daily Rewards loop and the unlocking-city meta progression, this drives D1/D7 retention and reduces friction toward subscription conversion.
+## Smart business enhancement
+**"Lifetime" tier as the high-LTV anchor.** Most block-puzzle apps only sell a monthly sub; offering Lifetime alongside Monthly/Yearly in the same RevenueCat Paywall lets 1-3 % of engaged players convert into ~$80 one-time purchasers — a meaningful slice of revenue with zero churn. The Pro entitlement triggers golden block skins immediately, which is socially visible (screenshots, replays) and acts as a daily reminder of value for retention.

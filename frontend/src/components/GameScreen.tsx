@@ -635,15 +635,22 @@ export function GameScreen() {
   const handleSubscribePass = useCallback(async () => {
     setLoadingIap(true);
     try {
-      const r = await purchaseProduct("season_pass_monthly");
-      if (r.success) {
+      const { didGainAccess } = await presentProPaywall();
+      if (didGainAccess) {
         setPassActive(true);
+        setShowPass(false);
         haptic.success();
         playSfx("bonus");
       }
     } finally {
       setLoadingIap(false);
     }
+  }, []);
+
+  const handleManageSubscription = useCallback(async () => {
+    await presentCustomerCenter();
+    const has = await hasProEntitlement();
+    setPassActive(has);
   }, []);
 
   const handleRefillCoins = useCallback(() => {
