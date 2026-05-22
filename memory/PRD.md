@@ -3,7 +3,7 @@
 ## Overview
 **Tetris Architect** is a portrait-only React Native / Expo SDK 54 mobile puzzle game for **Google Play Store (Android)**. Tetris-like pieces are drag-and-dropped onto an 8 × 10 grid; clearing rows triggers Tetris-style gravity, particle bursts, combo multipliers, and progressive unlock of a neon city skyline that cycles through day & night.
 
-Package: `com.emergent.tetrisarchitect`
+Package: `com.wispersofthepast.tetrisarchitect`
 Version: 1.0.0 (versionCode 1)
 
 ## Tech Stack
@@ -89,7 +89,7 @@ Public API (identical in both):
 # 🚀 Final Path to Play Store
 
 ## What's done (in this codebase)
-- ✅ Package name `com.emergent.tetrisarchitect`, app name "Tetris Architect"
+- ✅ Package name `com.wispersofthepast.tetrisarchitect`, app name "Tetris Architect"
 - ✅ Real RevenueCat + AdMob wired into `monetization.native.ts`
 - ✅ Web-safe stub `monetization.ts` keeps the preview working
 - ✅ AdMob plugin + App IDs configured in `app.json`
@@ -105,7 +105,7 @@ Public API (identical in both):
 
 ### A. RevenueCat dashboard setup (15 min)
 1. Log in at https://app.revenuecat.com
-2. Create project "Tetris Architect" → add **Google Play** app with package `com.emergent.tetrisarchitect`
+2. Create project "Tetris Architect" → add **Google Play** app with package `com.wispersofthepast.tetrisarchitect`
 3. Under **Entitlements**, create one entitlement with identifier exactly **`Tetris Architect Pro`**
 4. Under **Products** (or via the Play Console import), add **three products** with IDs `lifetime`, `yearly`, `monthly` — attach each to the `Tetris Architect Pro` entitlement
 5. Under **Offerings**, set the current offering to include all three packages
@@ -114,7 +114,7 @@ Public API (identical in both):
 
 ### B. Google Play Console setup (45 min)
 1. Sign up: https://play.google.com/console ($25 one-time)
-2. Create app "Tetris Architect" → package `com.emergent.tetrisarchitect` → Game → Free → with ads + IAP
+2. Create app "Tetris Architect" → package `com.wispersofthepast.tetrisarchitect` → Game → Free → with ads + IAP
 3. Under **Monetize → Products**:
    - Subscription product `monthly` (auto-renewing, base plan $4.99 / month)
    - Subscription product `yearly` (auto-renewing, base plan $39.99 / year)

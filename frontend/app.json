@@ -12,7 +12,7 @@
     "description": "Tetris Architect — drag, drop, clear & build a neon city. A premium, free-to-play block puzzle.",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.emergent.tetrisarchitect",
+      "bundleIdentifier": "com.wispersofthepast.tetrisarchitect",
       "buildNumber": "1",
       "config": {
         "usesNonExemptEncryption": false
@@ -24,7 +24,7 @@
         "backgroundColor": "#050510"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.emergent.tetrisarchitect",
+      "package": "com.wispersofthepast.tetrisarchitect",
       "versionCode": 1,
       "permissions": [
         "VIBRATE",
