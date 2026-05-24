@@ -49,8 +49,18 @@ async def create_status_check(input: StatusCheckCreate):
 
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
+    # Fetch only the fields we serialize, with a sane upper bound.
+    cursor = db.status_checks.find(
+        {},
+        {"_id": 0, "id": 1, "client_name": 1, "timestamp": 1},
+    ).limit(100)
+    status_checks = await cursor.to_list(100)
     return [StatusCheck(**status_check) for status_check in status_checks]
+
+@api_router.get("/health")
+async def health_check():
+    # Lightweight readiness probe for Emergent / Kubernetes deployment.
+    return {"status": "ok"}
 
 # Include the router in the main app
 app.include_router(api_router)
