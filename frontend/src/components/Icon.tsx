@@ -27,10 +27,11 @@ const GLYPHS: Record<string, string> = {
   "play-circle": "▶",
   "checkmark-circle": "✓",
   checkmark: "✓",
+  trash: "🗑",
 };
 
 // Some glyphs are emoji and should keep their native color (set by the OS).
-const EMOJI_GLYPHS = new Set(["flame", "bulb", "hammer"]);
+const EMOJI_GLYPHS = new Set(["flame", "bulb", "hammer", "trash"]);
 
 type Props = {
   name: string;

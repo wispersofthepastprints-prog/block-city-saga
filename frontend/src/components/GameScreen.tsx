@@ -632,6 +632,43 @@ export function GameScreen() {
     undoSnap.current = null;
   }, []);
 
+  // Permanently erase ALL persisted data — used by the in-app
+  // "Reset all data" button in Settings (referenced in the Privacy Policy
+  // for GDPR / Google Play Data Safety compliance).
+  const handleResetAllData = useCallback(async () => {
+    // Wipe every persisted key.
+    await Promise.all(
+      Object.values(STORAGE_KEYS).map((k) => storage.removeItem(k)),
+    );
+    // Reset in-memory state back to factory defaults.
+    setHighScore(0);
+    setCoins(0);
+    setUndos(3);
+    setEnergy(MAX_ENERGY);
+    setPassActive(false);
+    setLinesCleared(0);
+    setDailyDay(0);
+    setSfxOn(true);
+    setMusicOn(true);
+    setHapticsOn(true);
+    setSfxEnabled(true);
+    setMusicEnabled(true);
+    setHapticsEnabled(true);
+    // Reset the current game session.
+    setGrid(emptyGrid());
+    setPieces(randomTriple());
+    setScore(0);
+    setStreak(0);
+    setCombo(0);
+    setShowGameOver(false);
+    setShowEnergy(false);
+    setShowShop(false);
+    setShowPass(false);
+    setShowDaily(false);
+    setShowSettings(false);
+    undoSnap.current = null;
+  }, []);
+
   const handleSubscribePass = useCallback(async () => {
     setLoadingIap(true);
     try {
@@ -847,6 +884,7 @@ export function GameScreen() {
         toggleMusic={toggleMusic}
         toggleHaptics={toggleHaptics}
         onRestart={handleRestart}
+        onResetAllData={handleResetAllData}
         onManageSubscription={passActive ? handleManageSubscription : undefined}
       />
     </SafeAreaView>

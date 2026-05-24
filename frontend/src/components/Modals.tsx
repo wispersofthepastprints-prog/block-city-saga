@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Linking,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { Icon } from "./Icon";
@@ -471,6 +472,7 @@ export function SettingsModal({
   toggleMusic,
   toggleHaptics,
   onRestart,
+  onResetAllData,
   onManageSubscription,
 }: {
   visible: boolean;
@@ -482,8 +484,27 @@ export function SettingsModal({
   toggleMusic: () => void;
   toggleHaptics: () => void;
   onRestart: () => void;
+  onResetAllData: () => void;
   onManageSubscription?: () => void;
 }) {
+  const confirmResetAllData = () => {
+    haptic.warning?.();
+    Alert.alert(
+      "Reset All Data?",
+      "This will permanently erase your high score, coins, energy, undos, daily streak, settings and unlock progress.\n\nThis cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Erase Everything",
+          style: "destructive",
+          onPress: () => {
+            haptic.error();
+            onResetAllData();
+          },
+        },
+      ],
+    );
+  };
   return (
     <NeonModal
       visible={visible}
@@ -565,6 +586,19 @@ export function SettingsModal({
         <Icon name="refresh" size={16} color="#fff" />
         <Text style={[mStyles.ctaText, { marginLeft: 6 }]}>RESTART GAME</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[mStyles.cta, mStyles.ctaDanger, { marginTop: 8 }]}
+        onPress={confirmResetAllData}
+        testID="settings-reset-all"
+      >
+        <Icon name="trash" size={16} color="#ff5577" />
+        <Text style={[mStyles.ctaText, { marginLeft: 6, color: "#ff5577" }]}>
+          RESET ALL DATA
+        </Text>
+      </TouchableOpacity>
+      <Text style={mStyles.resetHint}>
+        Permanently erase all progress, scores, coins &amp; settings.
+      </Text>
     </NeonModal>
   );
 }
@@ -672,6 +706,18 @@ const mStyles = StyleSheet.create({
   },
   ctaSecondary: {
     backgroundColor: "rgba(255,255,255,0.06)",
+  },
+  ctaDanger: {
+    backgroundColor: "transparent",
+    borderWidth: 1.5,
+    borderColor: "#ff5577",
+  },
+  resetHint: {
+    color: "#555",
+    fontSize: 10,
+    textAlign: "center",
+    marginTop: 4,
+    fontStyle: "italic",
   },
   ctaText: {
     color: "#fff",
