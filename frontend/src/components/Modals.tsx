@@ -474,6 +474,7 @@ export function SettingsModal({
   onRestart,
   onResetAllData,
   onManageSubscription,
+  onUpdateAdConsent,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -486,6 +487,7 @@ export function SettingsModal({
   onRestart: () => void;
   onResetAllData: () => void;
   onManageSubscription?: () => void;
+  onUpdateAdConsent?: () => void;
 }) {
   const confirmResetAllData = () => {
     haptic.warning?.();
@@ -572,6 +574,21 @@ export function SettingsModal({
           <Icon name="diamond" size={16} color="#fff" />
           <Text style={[mStyles.ctaText, { marginLeft: 6 }]}>
             MANAGE SUBSCRIPTION
+          </Text>
+        </TouchableOpacity>
+      )}
+      {onUpdateAdConsent && (
+        <TouchableOpacity
+          style={[mStyles.cta, { backgroundColor: "rgba(58,134,255,0.18)", marginTop: 4, borderWidth: 1, borderColor: "rgba(58,134,255,0.4)" }]}
+          onPress={() => {
+            haptic.selection();
+            onUpdateAdConsent();
+          }}
+          testID="settings-ad-consent"
+        >
+          <Icon name="settings-outline" size={16} color="#3a86ff" />
+          <Text style={[mStyles.ctaText, { marginLeft: 6, color: "#3a86ff" }]}>
+            AD PRIVACY OPTIONS
           </Text>
         </TouchableOpacity>
       )}

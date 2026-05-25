@@ -64,7 +64,7 @@ import {
   setSfxEnabled,
   setMusicEnabled,
 } from "@/src/services/audio";
-import { showRewardedAd, presentProPaywall, presentCustomerCenter, hasProEntitlement, addEntitlementListener } from "@/src/services/monetization";
+import { showRewardedAd, presentProPaywall, presentCustomerCenter, hasProEntitlement, addEntitlementListener, presentPrivacyOptions, isPrivacyOptionsRequired } from "@/src/services/monetization";
 
 const STORAGE_KEYS = {
   HIGH_SCORE: "ba_high_score",
@@ -128,6 +128,8 @@ export function GameScreen() {
   const [sfxOn, setSfxOn] = useState(true);
   const [musicOn, setMusicOn] = useState(true);
   const [hapticsOn, setHapticsOn] = useState(true);
+  // Whether to show "Ad Privacy Options" button in Settings (GDPR users only).
+  const [showAdConsent, setShowAdConsent] = useState(false);
 
   // Modals
   const [showShop, setShowShop] = useState(false);
@@ -214,6 +216,11 @@ export function GameScreen() {
     addEntitlementListener((hasPro) => setPassActive(hasPro)).then((u) => {
       unsub = u;
     });
+    // Ask Google whether the user is in a region where the UMP "Privacy
+    // Options" button is mandatory. If so, expose the button in Settings.
+    isPrivacyOptionsRequired()
+      .then((req) => setShowAdConsent(req))
+      .catch(() => {});
     return () => {
       stopMusic();
       unsub?.();
@@ -690,6 +697,12 @@ export function GameScreen() {
     setPassActive(has);
   }, []);
 
+  // Open Google UMP "Privacy options" form so the user can change their
+  // GDPR / personalised-ads consent. Only relevant in regulated regions.
+  const handleUpdateAdConsent = useCallback(async () => {
+    await presentPrivacyOptions();
+  }, []);
+
   const handleRefillCoins = useCallback(() => {
     if (coins < 40) return;
     setCoins((c) => c - 40);
@@ -886,6 +899,7 @@ export function GameScreen() {
         onRestart={handleRestart}
         onResetAllData={handleResetAllData}
         onManageSubscription={passActive ? handleManageSubscription : undefined}
+        onUpdateAdConsent={showAdConsent ? handleUpdateAdConsent : undefined}
       />
     </SafeAreaView>
   );

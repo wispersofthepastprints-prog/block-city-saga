@@ -68,6 +68,109 @@ async function getGoogleMobileAds(): Promise<any | null> {
 }
 
 // ---------------------------------------------------------------------------
+// UMP / GDPR consent gathering
+//
+// Google's User Messaging Platform (UMP) is mandatory for serving AdMob ads to
+// users in the EEA / UK / Switzerland (GDPR) and California (CCPA). Without it
+// AdMob may refuse to serve ads or flag the app for policy violation.
+//
+// Flow on first launch:
+//   1. Call AdsConsent.gatherConsent() — Google decides whether the user is in
+//      a regulated region. If yes, it shows the consent form automatically.
+//   2. AdsConsent reports `canRequestAds` — if true, we initialize MobileAds.
+//   3. We pass `requestNonPersonalizedAdsOnly` based on the user's choice.
+// ---------------------------------------------------------------------------
+
+let adsCanBeRequested = false;
+let adsRequireNonPersonalized = true; // safe default
+
+async function gatherAdConsent(): Promise<void> {
+  if (!IS_NATIVE_RUNTIME) return;
+  const ads = await getGoogleMobileAds();
+  if (!ads) return;
+  const { AdsConsent, AdsConsentDebugGeography } = ads as any;
+  if (!AdsConsent) {
+    console.warn("[UMP] AdsConsent API unavailable in this SDK version");
+    return;
+  }
+  try {
+    // In __DEV__, force EEA geography so we can verify the consent UI on test
+    // devices. In production this is undefined and Google detects geography
+    // from the user's IP.
+    const info = await AdsConsent.gatherConsent(
+      __DEV__
+        ? {
+            debugGeography: AdsConsentDebugGeography?.EEA,
+            testDeviceIdentifiers: [],
+          }
+        : undefined,
+    );
+    adsCanBeRequested = info?.canRequestAds ?? true;
+    // Personalized ads are only allowed if the user has granted consent for
+    // purpose 1 (storage & access of information on a device). UMP returns a
+    // TC string but the simpler `canRequestAds` + purposeConsents check works.
+    try {
+      const purposes: string = await AdsConsent.getPurposeConsents();
+      // "1" present in the string = personalised ads consented.
+      adsRequireNonPersonalized = !purposes?.includes("1");
+    } catch {
+      adsRequireNonPersonalized = true;
+    }
+    console.log(
+      `[UMP] canRequestAds=${adsCanBeRequested}, nonPersonalizedOnly=${adsRequireNonPersonalized}`,
+    );
+  } catch (e) {
+    console.warn("[UMP] gatherConsent failed", e);
+    // If UMP itself fails, fall back to allowing ads with NPA only — this is
+    // the most conservative legally-compliant default.
+    adsCanBeRequested = true;
+    adsRequireNonPersonalized = true;
+  }
+}
+
+/**
+ * Re-show the UMP privacy options form so the user can change their consent.
+ * Called from the Settings modal — required by Google for users in regulated
+ * regions.
+ */
+export async function presentPrivacyOptions(): Promise<void> {
+  if (!IS_NATIVE_RUNTIME) {
+    console.log("[UMP] (mock) presentPrivacyOptions");
+    return;
+  }
+  const ads = await getGoogleMobileAds();
+  const AdsConsent = (ads as any)?.AdsConsent;
+  if (!AdsConsent) return;
+  try {
+    await AdsConsent.showPrivacyOptionsForm();
+    // Re-read consent after the user changes selections.
+    try {
+      const purposes: string = await AdsConsent.getPurposeConsents();
+      adsRequireNonPersonalized = !purposes?.includes("1");
+    } catch {}
+  } catch (e) {
+    console.warn("[UMP] showPrivacyOptionsForm failed", e);
+  }
+}
+
+/**
+ * Whether the UMP "Privacy options" button should be visible in the app's
+ * Settings (only visible to users in regulated regions per Google's policy).
+ */
+export async function isPrivacyOptionsRequired(): Promise<boolean> {
+  if (!IS_NATIVE_RUNTIME) return false;
+  const ads = await getGoogleMobileAds();
+  const AdsConsent = (ads as any)?.AdsConsent;
+  if (!AdsConsent) return false;
+  try {
+    const status = await AdsConsent.getPrivacyOptionsRequirementStatus?.();
+    return status === "REQUIRED";
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // One-time SDK initialisation (called from app/_layout.tsx)
 // ---------------------------------------------------------------------------
 
@@ -106,13 +209,25 @@ export async function initializeMonetization(): Promise<void> {
   }
 
   // --- Google Mobile Ads ---
+  // IMPORTANT: gather UMP / GDPR consent BEFORE initialising MobileAds, otherwise
+  // ads served to EU users will violate Google's published policy.
   try {
-    const ads = await getGoogleMobileAds();
-    if (ads?.default) {
-      await ads.default().initialize();
-      console.log("[AdMob] MobileAds initialised");
-      // Preload first rewarded ad
-      void preloadRewardedAd();
+    await gatherAdConsent();
+  } catch (e) {
+    console.warn("[UMP] consent flow failed", e);
+  }
+
+  try {
+    if (!adsCanBeRequested) {
+      console.log("[AdMob] user has not granted consent — skipping init");
+    } else {
+      const ads = await getGoogleMobileAds();
+      if (ads?.default) {
+        await ads.default().initialize();
+        console.log("[AdMob] MobileAds initialised");
+        // Preload first rewarded ad
+        void preloadRewardedAd();
+      }
     }
   } catch (e) {
     console.warn("[AdMob] init failed", e);
@@ -282,7 +397,10 @@ async function preloadRewardedAd(): Promise<void> {
       process.env.EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID ?? "";
     const unitId = __DEV__ || !productionUnit ? TestIds.REWARDED : productionUnit;
     rewardedAd = RewardedAd.createForAdRequest(unitId, {
-      requestNonPersonalizedAdsOnly: true,
+      // Honor the user's UMP / GDPR choice. If they opted out of personalised
+      // ads (or are in a region requiring consent and haven't granted it),
+      // serve non-personalised ads only.
+      requestNonPersonalizedAdsOnly: adsRequireNonPersonalized,
     });
     rewardedAd.addAdEventListener(RewardedAdEventType.LOADED, () => {
       rewardedAdLoaded = true;

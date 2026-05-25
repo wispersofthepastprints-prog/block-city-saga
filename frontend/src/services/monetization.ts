@@ -67,3 +67,12 @@ export async function showRewardedAd(): Promise<{ rewarded: boolean }> {
   await new Promise((r) => setTimeout(r, 1200));
   return { rewarded: true };
 }
+
+// UMP / GDPR consent — no-ops on web.
+export async function presentPrivacyOptions(): Promise<void> {
+  // no-op on web
+}
+
+export async function isPrivacyOptionsRequired(): Promise<boolean> {
+  return false;
+}
