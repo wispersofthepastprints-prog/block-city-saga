@@ -14,6 +14,24 @@ import { Icon } from "./Icon";
 import { LinearGradient } from "expo-linear-gradient";
 import { NeonModal } from "./NeonModal";
 import { haptic, playSfx } from "@/src/services/audio";
+import { IS_PASS_AVAILABLE } from "@/src/services/monetization";
+
+// ---------------------------------------------------------------------------
+// "Coming Soon" placeholder shown wherever the Season Pass entry points used
+// to live. Styling matches the visual provided by the product owner — neutral,
+// muted, clearly disabled.
+// ---------------------------------------------------------------------------
+function PassComingSoon({ style }: { style?: any }) {
+  return (
+    <TouchableOpacity
+      style={[mStyles.passComingSoon, style]}
+      disabled
+      testID="pass-coming-soon"
+    >
+      <Text style={mStyles.passComingSoonText}>👑 Pass — Coming Soon</Text>
+    </TouchableOpacity>
+  );
+}
 
 // =============================================================================
 // DAILY REWARDS
@@ -181,19 +199,23 @@ export function ShopModal({
           </TouchableOpacity>
         );
       })}
-      <TouchableOpacity
-        style={mStyles.passUpsell}
-        onPress={() => {
-          haptic.light();
-          onOpenSeasonPass();
-        }}
-        testID="shop-open-pass"
-      >
-        <Icon name="star" size={16} color="#ffbe0b" />
-        <Text style={mStyles.passUpsellText}>
-          Skip the grind — Season Pass for unlimited energy!
-        </Text>
-      </TouchableOpacity>
+      {IS_PASS_AVAILABLE ? (
+        <TouchableOpacity
+          style={mStyles.passUpsell}
+          onPress={() => {
+            haptic.light();
+            onOpenSeasonPass();
+          }}
+          testID="shop-open-pass"
+        >
+          <Icon name="star" size={16} color="#ffbe0b" />
+          <Text style={mStyles.passUpsellText}>
+            Skip the grind — Season Pass for unlimited energy!
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <PassComingSoon style={{ marginTop: 8 }} />
+      )}
     </NeonModal>
   );
 }
@@ -236,7 +258,9 @@ export function SeasonPassModal({
         <PassPerk icon="close-circle" text="No Ads, Ever" color="#3a86ff" />
         <PassPerk icon="diamond" text="Exclusive Daily Rewards" color="#8338ec" />
       </View>
-      {active ? (
+      {!IS_PASS_AVAILABLE ? (
+        <PassComingSoon />
+      ) : active ? (
         <View style={[mStyles.cta, { backgroundColor: "#06ffa5" }]}>
           <Text style={[mStyles.ctaText, { color: "#000" }]}>
             ✓ ACTIVE — PREMIUM PERKS ENABLED
@@ -357,7 +381,7 @@ export function GameOverModal({
       >
         <Text style={mStyles.ctaText}>CONTINUE (50 COINS)</Text>
       </TouchableOpacity>
-      {!passActive && (
+      {!passActive && IS_PASS_AVAILABLE && (
         <TouchableOpacity
           style={[mStyles.cta, { backgroundColor: "#ffbe0b" }]}
           onPress={onBuyPass}
@@ -443,7 +467,7 @@ export function EnergyModal({
           40 COINS — REFILL
         </Text>
       </TouchableOpacity>
-      {!passActive && (
+      {!passActive && IS_PASS_AVAILABLE && (
         <TouchableOpacity
           style={[mStyles.cta, { backgroundColor: "#ffbe0b" }]}
           onPress={onBuyPass}
@@ -815,6 +839,24 @@ const mStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,190,11,0.2)",
     marginTop: 8,
+  },
+  passComingSoon: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    opacity: 0.55,
+    marginTop: 8,
+  },
+  passComingSoonText: {
+    color: "#8b8b9e",
+    fontWeight: "800",
+    fontSize: 12,
+    letterSpacing: 0.6,
   },
   passUpsellText: {
     color: "#ffbe0b",

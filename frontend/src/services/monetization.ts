@@ -7,6 +7,9 @@
 
 export const ENTITLEMENT_ID = "Tetris Architect Pro";
 
+// Feature flag: must match the value in monetization.native.ts.
+export const IS_PASS_AVAILABLE = false;
+
 export const PRODUCT_IDS = {
   lifetime: "lifetime",
   yearly: "yearly",

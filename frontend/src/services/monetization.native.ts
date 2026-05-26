@@ -18,6 +18,12 @@ import { Platform } from "react-native";
 
 export const ENTITLEMENT_ID = "Tetris Architect Pro";
 
+// Feature flag: Season Pass IAPs are not yet wired in Play Console / RevenueCat.
+// While false, all Pass entry points are hidden in the UI and replaced with a
+// "Coming Soon" placeholder. Flip this to `true` once the 3 products
+// (lifetime / yearly / monthly) exist in both dashboards.
+export const IS_PASS_AVAILABLE = false;
+
 export const PRODUCT_IDS = {
   lifetime: "lifetime",
   yearly: "yearly",
