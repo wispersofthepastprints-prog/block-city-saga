@@ -16,6 +16,8 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
+import { DebugOverlay } from "./DebugOverlay";
+import { useSafeLayout } from "@/src/utils/safeLayout";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -88,26 +90,10 @@ const MAX_ENERGY = 5;
 export function GameScreen() {
   const { width: winW } = useWindowDimensions();
   const SCREEN_W = winW && winW > 0 ? Math.min(Math.max(winW, 320), 430) : 380;
-  const insets = useSafeAreaInsets();
-  // Bottom padding has to keep the tray clear of the Android navigation bar
-  // (3-button or gesture). `insets.bottom` is unreliable on some older
-  // Samsung One UI builds — it can report 0 even when there is a 100+ px
-  // opaque nav bar at the bottom of the screen. We compensate with a much
-  // larger Android floor (140 px) so the tray never slips under the system
-  // buttons on Galaxy S20 / S10 / older One UI devices. iOS stays slimmer.
-  const ANDROID_NAV_FLOOR = 140;
-  const IOS_HOME_FLOOR = 80;
-  const fallbackFloor =
-    Platform.OS === "android" ? ANDROID_NAV_FLOOR : IOS_HOME_FLOOR;
-  const bottomPad = Math.max(
-    insets.bottom + 24,
-    fallbackFloor,
-    // Extra defensive: if the StatusBar height on Android is non-trivial,
-    // assume the nav bar is at least the same height + 50 px buffer.
-    Platform.OS === "android"
-      ? (StatusBar.currentHeight ?? 0) + 80
-      : 0,
-  );
+  // Robust top / bottom padding that handles Samsung One UI quirks where
+  // `useSafeAreaInsets()` reports 0 even on devices with chunky nav bars.
+  // See: /app/frontend/src/utils/safeLayout.ts for the full reasoning.
+  const { topPad, bottomPad } = useSafeLayout();
 
   // Game state
   const [grid, setGrid] = useState<Cell[][]>(() => emptyGrid());
@@ -774,9 +760,12 @@ export function GameScreen() {
   const slotWidth = (SCREEN_W - 24 - 12) / 3;
 
   return (
-    <SafeAreaView style={styles.root} edges={["top", "left", "right", "bottom"]}>
+    // We own the top and bottom padding via `useSafeLayout()` so we tell
+    // SafeAreaView to only handle horizontal edges. This avoids double-padding
+    // and lets our generous Android floors actually take effect.
+    <SafeAreaView style={styles.root} edges={["left", "right"]}>
       <RainbowBorder />
-      <Animated.View style={[styles.container, shakeStyle]}>
+      <Animated.View style={[styles.container, shakeStyle, { paddingTop: topPad }]}>
         <TopBar
           score={score}
           streak={streak}
@@ -918,6 +907,9 @@ export function GameScreen() {
         onManageSubscription={passActive ? handleManageSubscription : undefined}
         onUpdateAdConsent={showAdConsent ? handleUpdateAdConsent : undefined}
       />
+      {/* Dev-only overlay — invisible in production. Tap top-right corner
+          5× in __DEV__ to toggle. */}
+      <DebugOverlay />
     </SafeAreaView>
   );
 }
