@@ -11,6 +11,8 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
@@ -87,10 +89,25 @@ export function GameScreen() {
   const { width: winW } = useWindowDimensions();
   const SCREEN_W = winW && winW > 0 ? Math.min(Math.max(winW, 320), 430) : 380;
   const insets = useSafeAreaInsets();
-  // Bottom inset: Android nav bar / iPhone home indicator must not cover the tray.
-  // Use a generous floor (60 px) so even when insets.bottom reports 0 (some
-  // Android edge-to-edge devices), the tray stays clear of the nav buttons.
-  const bottomPad = Math.max(insets.bottom + 24, 80);
+  // Bottom padding has to keep the tray clear of the Android navigation bar
+  // (3-button or gesture). `insets.bottom` is unreliable on some older
+  // Samsung One UI builds — it can report 0 even when there is a 100+ px
+  // opaque nav bar at the bottom of the screen. We compensate with a much
+  // larger Android floor (140 px) so the tray never slips under the system
+  // buttons on Galaxy S20 / S10 / older One UI devices. iOS stays slimmer.
+  const ANDROID_NAV_FLOOR = 140;
+  const IOS_HOME_FLOOR = 80;
+  const fallbackFloor =
+    Platform.OS === "android" ? ANDROID_NAV_FLOOR : IOS_HOME_FLOOR;
+  const bottomPad = Math.max(
+    insets.bottom + 24,
+    fallbackFloor,
+    // Extra defensive: if the StatusBar height on Android is non-trivial,
+    // assume the nav bar is at least the same height + 50 px buffer.
+    Platform.OS === "android"
+      ? (StatusBar.currentHeight ?? 0) + 80
+      : 0,
+  );
 
   // Game state
   const [grid, setGrid] = useState<Cell[][]>(() => emptyGrid());
