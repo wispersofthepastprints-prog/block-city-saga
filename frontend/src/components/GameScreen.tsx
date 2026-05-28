@@ -28,7 +28,8 @@ import Animated, {
 import { RainbowBorder } from "./RainbowBorder";
 import { TopBar } from "./TopBar";
 import { Skyline } from "./Skyline";
-import { GameGrid, GRID_W, GRID_H, CELL_SIZE, CELL_GAP, GRID_PAD } from "./GameGrid";
+import { GameGrid, CELL_GAP, GRID_PAD } from "./GameGrid";
+import { useLiveCellSize } from "@/src/utils/gridSize";
 import { Tray } from "./Tray";
 import { Burst } from "./Burst";
 import { FloatingText } from "./FloatingText";
@@ -92,6 +93,10 @@ export function GameScreen() {
   // `useSafeAreaInsets()` reports 0 even on devices with chunky nav bars.
   // See: /app/frontend/src/utils/safeLayout.ts for the full reasoning.
   const { topPad, bottomPad } = useSafeLayout();
+  // Live grid sizing — must match GameGrid's render output so drag→cell math
+  // and the danger overlay both line up with what's actually on screen.
+  const { cellSize: liveCellSize, gridW: liveGridW, gridH: liveGridH } =
+    useLiveCellSize();
 
   // Game state
   const [grid, setGrid] = useState<Cell[][]>(() => emptyGrid());
@@ -284,17 +289,17 @@ export function GameScreen() {
   const computeCell = useCallback((absX: number, absY: number, piece: Piece) => {
     const pw = piece.shape[0].length;
     const ph = piece.shape.length;
-    const pieceWpx = pw * CELL_SIZE + (pw - 1) * CELL_GAP;
-    const pieceHpx = ph * CELL_SIZE + (ph - 1) * CELL_GAP;
+    const pieceWpx = pw * liveCellSize + (pw - 1) * CELL_GAP;
+    const pieceHpx = ph * liveCellSize + (ph - 1) * CELL_GAP;
     // ghost visual center is at (absX, absY - 70) due to fixed lift in Tray.
     const gx = absX - pieceWpx / 2;
     const gy = absY - 70 - pieceHpx / 2;
     const localX = gx - gridScreen.current.x - GRID_PAD;
     const localY = gy - gridScreen.current.y - GRID_PAD;
-    const col = Math.round(localX / (CELL_SIZE + CELL_GAP));
-    const row = Math.round(localY / (CELL_SIZE + CELL_GAP));
+    const col = Math.round(localX / (liveCellSize + CELL_GAP));
+    const row = Math.round(localY / (liveCellSize + CELL_GAP));
     return { row, col };
-  }, []);
+  }, [liveCellSize]);
 
   const handleDragMove = useCallback(
     (absX: number, absY: number) => {
@@ -327,13 +332,13 @@ export function GameScreen() {
             x:
               baseX +
               GRID_PAD +
-              c * (CELL_SIZE + CELL_GAP) +
-              CELL_SIZE / 2,
+              c * (liveCellSize + CELL_GAP) +
+              liveCellSize / 2,
             y:
               baseY +
               GRID_PAD +
-              r * (CELL_SIZE + CELL_GAP) +
-              CELL_SIZE / 2,
+              r * (liveCellSize + CELL_GAP) +
+              liveCellSize / 2,
             color: palette[(r + c) % palette.length],
           });
         }
@@ -345,20 +350,20 @@ export function GameScreen() {
             x:
               baseX +
               GRID_PAD +
-              c * (CELL_SIZE + CELL_GAP) +
-              CELL_SIZE / 2,
+              c * (liveCellSize + CELL_GAP) +
+              liveCellSize / 2,
             y:
               baseY +
               GRID_PAD +
-              r * (CELL_SIZE + CELL_GAP) +
-              CELL_SIZE / 2,
+              r * (liveCellSize + CELL_GAP) +
+              liveCellSize / 2,
             color: palette[(r + c) % palette.length],
           });
         }
       });
       setBursts((b) => [...b, ...newBursts]);
     },
-    []
+    [liveCellSize]
   );
 
   const addFloatingText = useCallback(
@@ -444,7 +449,7 @@ export function GameScreen() {
           setCoins((c) => c + totalClears * 10);
 
           const cx = SCREEN_W / 2;
-          const cy = gridScreen.current.y + GRID_H / 2;
+          const cy = gridScreen.current.y + liveGridH / 2;
           addFloatingText(
             cx - 40,
             cy,
@@ -524,6 +529,7 @@ export function GameScreen() {
       spawnBurstsForLines,
       addFloatingText,
       triggerShake,
+      liveGridH,
     ]
   );
 
@@ -801,9 +807,14 @@ export function GameScreen() {
             goldenSkin={passActive}
             onGridLayout={onGridMounted}
           />
-          {/* danger overlay */}
+          {/* danger overlay — sized dynamically to the live grid */}
           <Animated.View
-            style={[styles.dangerOverlay, dangerStyle, { pointerEvents: "none" }]}
+            pointerEvents="none"
+            style={[
+              styles.dangerOverlay,
+              dangerStyle,
+              { width: liveGridW, height: liveGridH },
+            ]}
           />
         </View>
 
@@ -944,7 +955,5 @@ const styles = StyleSheet.create({
     borderWidth: 6,
     borderColor: "#ff0033",
     alignSelf: "center",
-    width: GRID_W,
-    height: GRID_H,
   },
 });

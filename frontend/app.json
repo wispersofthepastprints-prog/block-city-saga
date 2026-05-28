@@ -2,7 +2,7 @@
   "expo": {
     "name": "Tetris Architect",
     "slug": "tetris-architect",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "tetrisarchitect",
@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.wispersofthepast.tetrisarchitect",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "config": {
         "usesNonExemptEncryption": false
       }
@@ -25,7 +25,7 @@
       },
       "edgeToEdgeEnabled": false,
       "package": "com.wispersofthepast.tetrisarchitect",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "VIBRATE",
         "com.google.android.gms.permission.AD_ID"

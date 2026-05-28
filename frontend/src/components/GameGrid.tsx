@@ -1,21 +1,20 @@
-// 8x10 game grid + hover overlay
-import React, { useMemo } from "react";
-import { View, StyleSheet, useWindowDimensions } from "react-native";
+// 8x10 game grid + hover overlay.
+// Cell size is responsive — see /app/frontend/src/utils/gridSize.ts. We
+// re-export the layout constants the hook uses so legacy imports continue
+// to work even though the grid renders at the *live* size.
+import React from "react";
+import { View, StyleSheet } from "react-native";
 import { Block } from "./Block";
 import type { Cell } from "@/src/game/logic";
 import { COLS, ROWS } from "@/src/game/logic";
 import type { Piece, PieceColor } from "@/src/game/pieces";
+import { useLiveCellSize, CELL_GAP, GRID_PAD } from "@/src/utils/gridSize";
 
-// ── Sizing guards ──
-const MAX_CELL = 38; // never bigger (tablets stay reasonable)
-const MIN_CELL = 28; // never smaller (always tappable on small phones)
+// Re-export for callers that still import these names from GameGrid.
+export { CELL_GAP, GRID_PAD } from "@/src/utils/gridSize";
 
-export const CELL_GAP = 3;
-export const GRID_PAD = 4;
-
-// Exported baseline constants (used by GameScreen for dangerOverlay).
-// If the grid shrinks at runtime, the overlay may be a few px larger —
-// visually this just means a slightly thicker red border, which is fine.
+// Baseline constants kept ONLY for backwards-compat. New code should call
+// `useLiveCellSize()` to get the true sizes at runtime.
 export const CELL_SIZE = 36;
 export const GRID_INNER_W = COLS * CELL_SIZE + (COLS - 1) * CELL_GAP;
 export const GRID_INNER_H = ROWS * CELL_SIZE + (ROWS - 1) * CELL_GAP;
@@ -43,24 +42,7 @@ export const GameGrid = React.memo(function GameGrid({
   goldenSkin,
   onGridLayout,
 }: Props) {
-  const { height: winH } = useWindowDimensions();
-
-  // Reserve vertical space for: HUD ~90, skyline ~100, tray ~90, safe-area ~40
-  const reserved = 320;
-  const available = Math.max(winH - reserved, 280);
-
-  // Live cell size: fits the full grid into the vertical space left above the tray
-  const liveCellSize = useMemo(() => {
-    const raw = Math.floor(
-      (available - (ROWS - 1) * CELL_GAP - GRID_PAD * 2) / ROWS
-    );
-    return Math.max(MIN_CELL, Math.min(MAX_CELL, raw));
-  }, [available]);
-
-  const innerW = COLS * liveCellSize + (COLS - 1) * CELL_GAP;
-  const innerH = ROWS * liveCellSize + (ROWS - 1) * CELL_GAP;
-  const gridW = innerW + GRID_PAD * 2;
-  const gridH = innerH + GRID_PAD * 2;
+  const { cellSize, innerW, innerH, gridW, gridH } = useLiveCellSize();
 
   // hover overlay cells
   const hoverCells: { r: number; c: number; color: PieceColor; valid: boolean }[] = [];
@@ -95,10 +77,10 @@ export const GameGrid = React.memo(function GameGrid({
             style={[
               styles.bgCell,
               {
-                left: GRID_PAD + c * (liveCellSize + CELL_GAP),
-                top: GRID_PAD + r * (liveCellSize + CELL_GAP),
-                width: liveCellSize,
-                height: liveCellSize,
+                left: GRID_PAD + c * (cellSize + CELL_GAP),
+                top: GRID_PAD + r * (cellSize + CELL_GAP),
+                width: cellSize,
+                height: cellSize,
               },
             ]}
           />
@@ -114,8 +96,8 @@ export const GameGrid = React.memo(function GameGrid({
               style={[
                 styles.posCell,
                 {
-                  left: GRID_PAD + c * (liveCellSize + CELL_GAP),
-                  top: GRID_PAD + r * (liveCellSize + CELL_GAP),
+                  left: GRID_PAD + c * (cellSize + CELL_GAP),
+                  top: GRID_PAD + r * (cellSize + CELL_GAP),
                   opacity:
                     clearingRows.includes(r) || clearingCols.includes(c)
                       ? 0
@@ -123,7 +105,7 @@ export const GameGrid = React.memo(function GameGrid({
                 },
               ]}
             >
-              <Block color={cell.color} size={liveCellSize} golden={goldenSkin} />
+              <Block color={cell.color} size={cellSize} golden={goldenSkin} />
             </View>
           ) : null
         )
@@ -139,8 +121,8 @@ export const GameGrid = React.memo(function GameGrid({
             style={[
               styles.posCell,
               {
-                left: GRID_PAD + hc.c * (liveCellSize + CELL_GAP),
-                top: GRID_PAD + hc.r * (liveCellSize + CELL_GAP),
+                left: GRID_PAD + hc.c * (cellSize + CELL_GAP),
+                top: GRID_PAD + hc.r * (cellSize + CELL_GAP),
                 opacity: inBounds ? 0.55 : 0,
                 pointerEvents: "none",
               },
@@ -148,7 +130,7 @@ export const GameGrid = React.memo(function GameGrid({
           >
             <Block
               color={hc.color}
-              size={liveCellSize}
+              size={cellSize}
               opacity={hc.valid ? 0.65 : 0.4}
               glow={hc.valid}
             />
@@ -156,7 +138,7 @@ export const GameGrid = React.memo(function GameGrid({
               <View
                 style={[
                   styles.invalidOverlay,
-                  { width: liveCellSize, height: liveCellSize },
+                  { width: cellSize, height: cellSize },
                 ]}
               />
             )}
@@ -172,9 +154,9 @@ export const GameGrid = React.memo(function GameGrid({
             styles.flash,
             {
               left: GRID_PAD,
-              top: GRID_PAD + r * (liveCellSize + CELL_GAP),
+              top: GRID_PAD + r * (cellSize + CELL_GAP),
               width: innerW,
-              height: liveCellSize,
+              height: cellSize,
               pointerEvents: "none",
             },
           ]}
@@ -186,9 +168,9 @@ export const GameGrid = React.memo(function GameGrid({
           style={[
             styles.flash,
             {
-              left: GRID_PAD + c * (liveCellSize + CELL_GAP),
+              left: GRID_PAD + c * (cellSize + CELL_GAP),
               top: GRID_PAD,
-              width: liveCellSize,
+              width: cellSize,
               height: innerH,
             },
           ]}
