@@ -1,15 +1,22 @@
 // 8x10 game grid + hover overlay
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useMemo } from "react";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { Block } from "./Block";
 import type { Cell } from "@/src/game/logic";
 import { COLS, ROWS } from "@/src/game/logic";
 import type { Piece, PieceColor } from "@/src/game/pieces";
 
-export const CELL_SIZE = 36;
+// ── Sizing guards ──
+const MAX_CELL = 38; // never bigger (tablets stay reasonable)
+const MIN_CELL = 28; // never smaller (always tappable on small phones)
+
 export const CELL_GAP = 3;
 export const GRID_PAD = 4;
 
+// Exported baseline constants (used by GameScreen for dangerOverlay).
+// If the grid shrinks at runtime, the overlay may be a few px larger —
+// visually this just means a slightly thicker red border, which is fine.
+export const CELL_SIZE = 36;
 export const GRID_INNER_W = COLS * CELL_SIZE + (COLS - 1) * CELL_GAP;
 export const GRID_INNER_H = ROWS * CELL_SIZE + (ROWS - 1) * CELL_GAP;
 export const GRID_W = GRID_INNER_W + GRID_PAD * 2;
@@ -36,6 +43,25 @@ export const GameGrid = React.memo(function GameGrid({
   goldenSkin,
   onGridLayout,
 }: Props) {
+  const { height: winH } = useWindowDimensions();
+
+  // Reserve vertical space for: HUD ~90, skyline ~100, tray ~90, safe-area ~40
+  const reserved = 320;
+  const available = Math.max(winH - reserved, 280);
+
+  // Live cell size: fits the full grid into the vertical space left above the tray
+  const liveCellSize = useMemo(() => {
+    const raw = Math.floor(
+      (available - (ROWS - 1) * CELL_GAP - GRID_PAD * 2) / ROWS
+    );
+    return Math.max(MIN_CELL, Math.min(MAX_CELL, raw));
+  }, [available]);
+
+  const innerW = COLS * liveCellSize + (COLS - 1) * CELL_GAP;
+  const innerH = ROWS * liveCellSize + (ROWS - 1) * CELL_GAP;
+  const gridW = innerW + GRID_PAD * 2;
+  const gridH = innerH + GRID_PAD * 2;
+
   // hover overlay cells
   const hoverCells: { r: number; c: number; color: PieceColor; valid: boolean }[] = [];
   if (hover) {
@@ -55,7 +81,7 @@ export const GameGrid = React.memo(function GameGrid({
 
   return (
     <View
-      style={styles.wrap}
+      style={[styles.wrap, { width: gridW, height: gridH }]}
       onLayout={(e) => {
         const { x, y } = e.nativeEvent.layout;
         onGridLayout(x, y);
@@ -69,10 +95,10 @@ export const GameGrid = React.memo(function GameGrid({
             style={[
               styles.bgCell,
               {
-                left: GRID_PAD + c * (CELL_SIZE + CELL_GAP),
-                top: GRID_PAD + r * (CELL_SIZE + CELL_GAP),
-                width: CELL_SIZE,
-                height: CELL_SIZE,
+                left: GRID_PAD + c * (liveCellSize + CELL_GAP),
+                top: GRID_PAD + r * (liveCellSize + CELL_GAP),
+                width: liveCellSize,
+                height: liveCellSize,
               },
             ]}
           />
@@ -88,8 +114,8 @@ export const GameGrid = React.memo(function GameGrid({
               style={[
                 styles.posCell,
                 {
-                  left: GRID_PAD + c * (CELL_SIZE + CELL_GAP),
-                  top: GRID_PAD + r * (CELL_SIZE + CELL_GAP),
+                  left: GRID_PAD + c * (liveCellSize + CELL_GAP),
+                  top: GRID_PAD + r * (liveCellSize + CELL_GAP),
                   opacity:
                     clearingRows.includes(r) || clearingCols.includes(c)
                       ? 0
@@ -97,7 +123,7 @@ export const GameGrid = React.memo(function GameGrid({
                 },
               ]}
             >
-              <Block color={cell.color} size={CELL_SIZE} golden={goldenSkin} />
+              <Block color={cell.color} size={liveCellSize} golden={goldenSkin} />
             </View>
           ) : null
         )
@@ -113,8 +139,8 @@ export const GameGrid = React.memo(function GameGrid({
             style={[
               styles.posCell,
               {
-                left: GRID_PAD + hc.c * (CELL_SIZE + CELL_GAP),
-                top: GRID_PAD + hc.r * (CELL_SIZE + CELL_GAP),
+                left: GRID_PAD + hc.c * (liveCellSize + CELL_GAP),
+                top: GRID_PAD + hc.r * (liveCellSize + CELL_GAP),
                 opacity: inBounds ? 0.55 : 0,
                 pointerEvents: "none",
               },
@@ -122,7 +148,7 @@ export const GameGrid = React.memo(function GameGrid({
           >
             <Block
               color={hc.color}
-              size={CELL_SIZE}
+              size={liveCellSize}
               opacity={hc.valid ? 0.65 : 0.4}
               glow={hc.valid}
             />
@@ -130,7 +156,7 @@ export const GameGrid = React.memo(function GameGrid({
               <View
                 style={[
                   styles.invalidOverlay,
-                  { width: CELL_SIZE, height: CELL_SIZE },
+                  { width: liveCellSize, height: liveCellSize },
                 ]}
               />
             )}
@@ -146,9 +172,9 @@ export const GameGrid = React.memo(function GameGrid({
             styles.flash,
             {
               left: GRID_PAD,
-              top: GRID_PAD + r * (CELL_SIZE + CELL_GAP),
-              width: GRID_INNER_W,
-              height: CELL_SIZE,
+              top: GRID_PAD + r * (liveCellSize + CELL_GAP),
+              width: innerW,
+              height: liveCellSize,
               pointerEvents: "none",
             },
           ]}
@@ -160,10 +186,10 @@ export const GameGrid = React.memo(function GameGrid({
           style={[
             styles.flash,
             {
-              left: GRID_PAD + c * (CELL_SIZE + CELL_GAP),
+              left: GRID_PAD + c * (liveCellSize + CELL_GAP),
               top: GRID_PAD,
-              width: CELL_SIZE,
-              height: GRID_INNER_H,
+              width: liveCellSize,
+              height: innerH,
             },
           ]}
         />
@@ -174,8 +200,6 @@ export const GameGrid = React.memo(function GameGrid({
 
 const styles = StyleSheet.create({
   wrap: {
-    width: GRID_W,
-    height: GRID_H,
     backgroundColor: "#0a0a18",
     borderRadius: 12,
     borderWidth: 1,
