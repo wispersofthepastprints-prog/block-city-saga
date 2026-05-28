@@ -17,7 +17,7 @@ import React, { useRef, useState } from "react";
 import {
   View,
   Text,
-  TouchableWithoutFeedback,
+  Pressable,
   StyleSheet,
   Platform,
   useWindowDimensions,
@@ -53,9 +53,12 @@ export function DebugOverlay() {
     <>
       {/* Invisible 56×56 hotspot in the top-right corner for dev toggle. */}
       {canToggle && (
-        <TouchableWithoutFeedback onPress={handleHotspotTap}>
-          <View style={styles.hotspot} />
-        </TouchableWithoutFeedback>
+        <Pressable
+          onPress={handleHotspotTap}
+          style={styles.hotspot}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
       )}
 
       {visible && (

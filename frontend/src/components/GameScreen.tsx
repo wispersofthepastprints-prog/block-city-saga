@@ -11,10 +11,8 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
-  Platform,
-  StatusBar,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
 import { DebugOverlay } from "./DebugOverlay";
 import { useSafeLayout } from "@/src/utils/safeLayout";
