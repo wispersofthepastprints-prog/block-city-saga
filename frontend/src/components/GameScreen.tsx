@@ -599,10 +599,11 @@ export function GameScreen() {
     (id: string, price: number) => {
       if (coins < price) return;
       setCoins((c) => c - price);
-       if (id === "energy") {
+      if (id === "energy") {
         setEnergy(MAX_ENERGY);
       } else if (id === "undos") {
         setUndos((u) => u + 3);
+      }
       } else if (id === "hints") {
         setHints((h) => h + 3);
         haptic.success();
@@ -1031,6 +1032,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   topContent: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
     width: "100%",
@@ -1053,7 +1055,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 2,
     width: "100%",
-  },
   },
   dangerOverlay: {
     position: "absolute",
