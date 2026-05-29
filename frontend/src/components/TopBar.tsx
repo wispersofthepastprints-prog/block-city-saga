@@ -1,8 +1,14 @@
-// Top bar: Score | Streak (flame) | Coins + Energy bar
+// Top HUD bar — score, combo, undos, coins, settings + powerups
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from "react-native-reanimated";
 import { Icon } from "./Icon";
-import { LinearGradient } from "expo-linear-gradient";
+
+const AnimatedText = Animated.createAnimatedComponent(Text);
 
 type Props = {
   score: number;
@@ -14,8 +20,11 @@ type Props = {
   undos: number;
   onPressCoins: () => void;
   onPressEnergy: () => void;
-  onPressSettings: () => void;
-  onPressUndo: () => void;
+  hints?: number;
+  hammers?: number;
+  hammerMode?: boolean;
+  onHintPress?: () => void;
+  onHammerPress?: () => void;
 };
 
 export function TopBar({
@@ -28,214 +37,167 @@ export function TopBar({
   undos,
   onPressCoins,
   onPressEnergy,
-  onPressSettings,
-  onPressUndo,
+  hints = 0,
+  hammers = 0,
+  hammerMode = false,
+  onHintPress,
+  onHammerPress,
 }: Props) {
+  const scoreScale = useSharedValue(1);
+
+  React.useEffect(() => {
+    scoreScale.value = withSpring(1.15, { damping: 8, stiffness: 300 });
+    const t = setTimeout(() => {
+      scoreScale.value = withSpring(1, { damping: 12, stiffness: 200 });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [score]);
+
+  const scoreStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scoreScale.value }],
+  }));
+
   return (
-    <View style={styles.wrap}>
-      <LinearGradient
-        colors={["#1a1a3a", "#050510"]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={styles.headerGradient}
-      />
-      <View style={styles.row}>
-        {/* Score */}
-        <View style={styles.scoreBlock} testID="topbar-score">
-          <Text style={styles.label}>SCORE</Text>
-          <Text style={styles.scoreValue}>{score.toLocaleString()}</Text>
+    <View style={styles.bar} testID="top-bar">
+      {/* Score */}
+      <View style={styles.left}>
+        <Text style={styles.label}>SCORE</Text>
+        <AnimatedText style={[styles.score, scoreStyle]} testID="score-text">
+          {score}
+        </AnimatedText>
+      </View>
+
+      {/* Center HUD */}
+      <View style={styles.center}>
+        {/* Streak / Combo */}
+        <View style={styles.pill}>
+          <Icon name="fire" size={14} color="#ff6b00" />
+          <Text style={styles.pillText}>{streak}x</Text>
         </View>
-        {/* Streak */}
-        <View style={styles.streakBlock} testID="topbar-streak">
-          <View style={styles.streakInner}>
-            <Icon
-              name="flame"
-              size={16}
-              color={streak >= 3 ? "#ff9500" : "#555"}
-            />
-            <Text
-              style={[
-                styles.streakValue,
-                streak >= 3 && { color: "#ff9500" },
-              ]}
-            >
-              {streak}x
-            </Text>
-          </View>
+
+        {/* Undos */}
+        <View style={styles.pill}>
+          <Icon name="undo" size={14} color="#00d4ff" />
+          <Text style={styles.pillText}>{undos}</Text>
         </View>
-        {/* Undo */}
+
+        {/* Hints */}
         <TouchableOpacity
-          style={[styles.undoBlock, undos === 0 && { opacity: 0.55 }]}
-          onPress={onPressUndo}
-          testID="undo-button"
+          onPress={onHintPress}
+          disabled={hints <= 0 || !onHintPress}
+          style={[styles.pill, hints <= 0 && styles.pillDisabled]}
+          activeOpacity={0.7}
         >
-          <Icon name="arrow-undo" size={14} color="#3a86ff" />
-          <Text style={styles.undoValue}>{undos}</Text>
+          <Text style={styles.pillIcon}>💡</Text>
+          <Text style={styles.pillText}>{hints}</Text>
         </TouchableOpacity>
+
+        {/* Hammer */}
+        <TouchableOpacity
+          onPress={onHammerPress}
+          disabled={hammers <= 0 || hammerMode || !onHammerPress}
+          style={[styles.pill, (hammers <= 0 || hammerMode) && styles.pillDisabled]}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.pillIcon}>🔨</Text>
+          <Text style={styles.pillText}>{hammers}</Text>
+        </TouchableOpacity>
+
+        {/* Energy */}
+        <TouchableOpacity onPress={onPressEnergy} style={styles.pill} activeOpacity={0.7}>
+          <Icon name="zap" size={14} color="#06ffa5" />
+          <Text style={styles.pillText}>
+            {unlimitedEnergy ? "∞" : `${energy}/${maxEnergy}`}
+          </Text>
+        </TouchableOpacity>
+
         {/* Coins */}
-        <TouchableOpacity
-          style={styles.coinsBlock}
-          onPress={onPressCoins}
-          testID="topbar-coins"
-        >
-          <Icon name="cash" size={14} color="#ffbe0b" />
-          <Text style={styles.coinsValue}>{coins.toLocaleString()}</Text>
-          <Icon
-            name="add-circle"
-            size={16}
-            color="#06ffa5"
-            style={{ marginLeft: 4 }}
-          />
-        </TouchableOpacity>
-        {/* Settings */}
-        <TouchableOpacity
-          style={styles.settingsBtn}
-          onPress={onPressSettings}
-          testID="topbar-settings"
-        >
-          <Icon name="settings-outline" size={18} color="#aaa" />
+        <TouchableOpacity onPress={onPressCoins} style={styles.pill} activeOpacity={0.7}>
+          <Icon name="coin" size={14} color="#ffd700" />
+          <Text style={styles.pillText}>{coins}</Text>
+          <Text style={styles.plus}>+</Text>
         </TouchableOpacity>
       </View>
-      {/* Energy bar */}
-      <TouchableOpacity
-        style={styles.energyRow}
-        onPress={onPressEnergy}
-        activeOpacity={0.7}
-        testID="topbar-energy"
-      >
-        <Icon name="flash" size={12} color="#ffbe0b" />
-        <View style={styles.energyBar}>
-          {Array.from({ length: maxEnergy }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.energyCell,
-                {
-                  backgroundColor:
-                    unlimitedEnergy || i < energy
-                      ? unlimitedEnergy
-                        ? "#ffbe0b"
-                        : "#06ffa5"
-                      : "#222238",
-                },
-              ]}
-            />
-          ))}
-        </View>
-        <Text style={styles.energyText}>
-          {unlimitedEnergy ? "∞" : `${energy}/${maxEnergy}`}
-        </Text>
+
+      {/* Settings */}
+      <TouchableOpacity onPress={onPressEnergy} style={styles.gear} activeOpacity={0.7}>
+        <Icon name="settings" size={20} color="#fff" />
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    paddingTop: 6,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-    overflow: "hidden",
-  },
-  headerGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  row: {
+  bar: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 2,
+    width: "100%",
+  },
+  left: {
+    alignItems: "flex-start",
+    minWidth: 60,
   },
   label: {
-    color: "#666",
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontSize: 10,
     fontWeight: "700",
+    color: "rgba(255,255,255,0.5)",
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
-  scoreBlock: {
-    flex: 1,
-  },
-  scoreValue: {
+  score: {
+    fontSize: 32,
+    fontWeight: "800",
     color: "#fff",
-    fontSize: 22,
-    fontWeight: "900",
-    letterSpacing: -0.5,
+    lineHeight: 36,
   },
-  streakBlock: {
-    paddingHorizontal: 6,
-  },
-  streakInner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    backgroundColor: "rgba(255,149,0,0.08)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,149,0,0.2)",
-  },
-  streakValue: {
-    color: "#888",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  undoBlock: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(58,134,255,0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(58,134,255,0.25)",
-  },
-  undoValue: {
-    color: "#3a86ff",
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  coinsBlock: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(255,190,11,0.08)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,190,11,0.25)",
-  },
-  coinsValue: {
-    color: "#ffbe0b",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  settingsBtn: {
-    padding: 6,
-  },
-  energyRow: {
-    marginTop: 8,
+  center: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-  },
-  energyBar: {
     flex: 1,
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  pill: {
     flexDirection: "row",
-    gap: 3,
-    height: 6,
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
-  energyCell: {
-    flex: 1,
-    height: 6,
-    borderRadius: 2,
+  pillDisabled: {
+    opacity: 0.3,
   },
-  energyText: {
-    color: "#aaa",
-    fontSize: 10,
+  pillText: {
+    fontSize: 12,
     fontWeight: "700",
-    minWidth: 28,
-    textAlign: "right",
+    color: "#fff",
+  },
+  pillIcon: {
+    fontSize: 12,
+  },
+  plus: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#06ffa5",
+    marginLeft: 2,
+  },
+  gear: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
 });

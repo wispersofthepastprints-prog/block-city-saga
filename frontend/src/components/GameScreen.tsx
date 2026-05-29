@@ -603,6 +603,7 @@ export function GameScreen() {
         setEnergy(MAX_ENERGY);
       } else if (id === "undos") {
         setUndos((u) => u + 3);
+      }
       } else if (id === "hints") {
         setHints((h) => h + 3);
         haptic.success();
@@ -868,6 +869,11 @@ export function GameScreen() {
           onPressEnergy={onPressEnergy}
           onPressSettings={onPressSettings}
           onPressUndo={handleUndo}
+          hints={hints}
+          hammers={hammers}
+          hammerMode={hammerMode}
+          onHintPress={activateHint}
+          onHammerPress={activateHammer}
         />
 
         <View style={styles.skylineWrap}>
@@ -909,16 +915,6 @@ export function GameScreen() {
         </View>
 
         {/* Undo lives in TopBar now */}
-
-        {/* Power-ups */}
-        <View style={styles.powerupsRow}>
-          <TouchableOpacity onPress={activateHint} disabled={hints <= 0} style={[styles.powerupBtn, hints <= 0 && styles.powerupDisabled]}>
-            <Text style={styles.powerupText}>💡 {hints}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={activateHammer} disabled={hammers <= 0 || hammerMode} style={[styles.powerupBtn, (hammers <= 0 || hammerMode) && styles.powerupDisabled]}>
-            <Text style={styles.powerupText}>🔨 {hammers}</Text>
-          </TouchableOpacity>
-        </View>
 
         <View style={[styles.trayArea, { paddingBottom: bottomPad }]}>
           <Tray
@@ -1061,29 +1057,6 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "hidden",
     width: "100%",
-  },
-  powerupsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 12,
-    paddingVertical: 4,
-    width: "100%",
-  },
-  powerupBtn: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  powerupDisabled: {
-    opacity: 0.3,
-  },
-  powerupText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
   },
   dangerOverlay: {
     position: "absolute",
