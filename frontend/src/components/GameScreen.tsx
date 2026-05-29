@@ -599,11 +599,10 @@ export function GameScreen() {
     (id: string, price: number) => {
       if (coins < price) return;
       setCoins((c) => c - price);
-      if (id === "energy") {
+       if (id === "energy") {
         setEnergy(MAX_ENERGY);
-        else if (id === "undos") {
+      } else if (id === "undos") {
         setUndos((u) => u + 3);
-      }
       } else if (id === "hints") {
         setHints((h) => h + 3);
         haptic.success();
