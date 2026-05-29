@@ -1,20 +1,17 @@
-// 8x10 game grid + hover overlay.
-// Cell size is responsive — see /app/frontend/src/utils/gridSize.ts. We
-// re-export the layout constants the hook uses so legacy imports continue
-// to work even though the grid renders at the *live* size.
-import React from "react";
-import { View, StyleSheet } from "react-native";
+// 8x10 game grid + hover overlay
+import React, { useMemo } from "react";
+import { View, StyleSheet, useWindowDimensions } from "react-native";
 import { Block } from "./Block";
 import type { Cell } from "@/src/game/logic";
 import { COLS, ROWS } from "@/src/game/logic";
 import type { Piece, PieceColor } from "@/src/game/pieces";
-import { useLiveCellSize, CELL_GAP, GRID_PAD } from "@/src/utils/gridSize";
 
-// Re-export for callers that still import these names from GameGrid.
-export { CELL_GAP, GRID_PAD } from "@/src/utils/gridSize";
+const MAX_CELL = 38;
+const MIN_CELL = 28;
 
-// Baseline constants kept ONLY for backwards-compat. New code should call
-// `useLiveCellSize()` to get the true sizes at runtime.
+export const CELL_GAP = 3;
+export const GRID_PAD = 4;
+
 export const CELL_SIZE = 36;
 export const GRID_INNER_W = COLS * CELL_SIZE + (COLS - 1) * CELL_GAP;
 export const GRID_INNER_H = ROWS * CELL_SIZE + (ROWS - 1) * CELL_GAP;
@@ -30,6 +27,10 @@ type Props = {
   flashCols: number[];
   goldenSkin: boolean;
   onGridLayout: (x: number, y: number) => void;
+  cellSize?: number;
+  hintGhost?: { row: number; col: number; pieceIdx: number } | null;
+  hammerMode?: boolean;
+  onHammerStrike?: (row: number, col: number) => void;
 };
 
 export const GameGrid = React.memo(function GameGrid({
@@ -41,10 +42,28 @@ export const GameGrid = React.memo(function GameGrid({
   flashCols,
   goldenSkin,
   onGridLayout,
+  cellSize: propCellSize,
+  hintGhost,
+  hammerMode,
+  onHammerStrike,
 }: Props) {
-  const { cellSize, innerW, innerH, gridW, gridH } = useLiveCellSize();
+  const { height: winH } = useWindowDimensions();
 
-  // hover overlay cells
+  const liveCellSize = useMemo(() => {
+    if (propCellSize) return propCellSize;
+    const reserved = 440;
+    const available = Math.max(winH - reserved, 280);
+    const raw = Math.floor(
+      (available - (ROWS - 1) * CELL_GAP - GRID_PAD * 2) / ROWS
+    );
+    return Math.max(MIN_CELL, Math.min(MAX_CELL, raw));
+  }, [propCellSize, winH]);
+
+  const innerW = COLS * liveCellSize + (COLS - 1) * CELL_GAP;
+  const innerH = ROWS * liveCellSize + (ROWS - 1) * CELL_GAP;
+  const gridW = innerW + GRID_PAD * 2;
+  const gridH = innerH + GRID_PAD * 2;
+
   const hoverCells: { r: number; c: number; color: PieceColor; valid: boolean }[] = [];
   if (hover) {
     for (let r = 0; r < hover.piece.shape.length; r++) {
@@ -69,25 +88,30 @@ export const GameGrid = React.memo(function GameGrid({
         onGridLayout(x, y);
       }}
     >
-      {/* background cells (empty grid) */}
       {Array.from({ length: ROWS }).map((_, r) =>
         Array.from({ length: COLS }).map((__, c) => (
           <View
             key={`bg-${r}-${c}`}
             style={[
               styles.bgCell,
+              hammerMode && styles.hammerTarget,
               {
-                left: GRID_PAD + c * (cellSize + CELL_GAP),
-                top: GRID_PAD + r * (cellSize + CELL_GAP),
-                width: cellSize,
-                height: cellSize,
+                left: GRID_PAD + c * (liveCellSize + CELL_GAP),
+                top: GRID_PAD + r * (liveCellSize + CELL_GAP),
+                width: liveCellSize,
+                height: liveCellSize,
               },
             ]}
+            {...(hammerMode && onHammerStrike
+              ? {
+                  onStartShouldSetResponder: () => true,
+                  onResponderRelease: () => onHammerStrike(r, c),
+                }
+              : {})}
           />
         ))
       )}
 
-      {/* placed blocks */}
       {grid.map((row, r) =>
         row.map((cell, c) =>
           cell.filled && cell.color ? (
@@ -96,8 +120,8 @@ export const GameGrid = React.memo(function GameGrid({
               style={[
                 styles.posCell,
                 {
-                  left: GRID_PAD + c * (cellSize + CELL_GAP),
-                  top: GRID_PAD + r * (cellSize + CELL_GAP),
+                  left: GRID_PAD + c * (liveCellSize + CELL_GAP),
+                  top: GRID_PAD + r * (liveCellSize + CELL_GAP),
                   opacity:
                     clearingRows.includes(r) || clearingCols.includes(c)
                       ? 0
@@ -105,13 +129,12 @@ export const GameGrid = React.memo(function GameGrid({
                 },
               ]}
             >
-              <Block color={cell.color} size={cellSize} golden={goldenSkin} />
+              <Block color={cell.color} size={liveCellSize} golden={goldenSkin} />
             </View>
           ) : null
         )
       )}
 
-      {/* hover overlay - translucent ghost on grid */}
       {hoverCells.map((hc, i) => {
         const inBounds =
           hc.r >= 0 && hc.r < ROWS && hc.c >= 0 && hc.c < COLS;
@@ -121,8 +144,8 @@ export const GameGrid = React.memo(function GameGrid({
             style={[
               styles.posCell,
               {
-                left: GRID_PAD + hc.c * (cellSize + CELL_GAP),
-                top: GRID_PAD + hc.r * (cellSize + CELL_GAP),
+                left: GRID_PAD + hc.c * (liveCellSize + CELL_GAP),
+                top: GRID_PAD + hc.r * (liveCellSize + CELL_GAP),
                 opacity: inBounds ? 0.55 : 0,
                 pointerEvents: "none",
               },
@@ -130,7 +153,7 @@ export const GameGrid = React.memo(function GameGrid({
           >
             <Block
               color={hc.color}
-              size={cellSize}
+              size={liveCellSize}
               opacity={hc.valid ? 0.65 : 0.4}
               glow={hc.valid}
             />
@@ -138,7 +161,7 @@ export const GameGrid = React.memo(function GameGrid({
               <View
                 style={[
                   styles.invalidOverlay,
-                  { width: cellSize, height: cellSize },
+                  { width: liveCellSize, height: liveCellSize },
                 ]}
               />
             )}
@@ -146,7 +169,22 @@ export const GameGrid = React.memo(function GameGrid({
         );
       })}
 
-      {/* row/col flash (white flash before clearing) */}
+      {/* Hint ghost — pulsing valid placement */}
+      {hintGhost && (
+        <View
+          style={[
+            styles.hintRing,
+            {
+              left: GRID_PAD + hintGhost.col * (liveCellSize + CELL_GAP) - 4,
+              top: GRID_PAD + hintGhost.row * (liveCellSize + CELL_GAP) - 4,
+              width: liveCellSize + 8,
+              height: liveCellSize + 8,
+              borderRadius: (liveCellSize + 8) / 2,
+            },
+          ]}
+        />
+      )}
+
       {flashRows.map((r) => (
         <View
           key={`fr-${r}`}
@@ -154,9 +192,9 @@ export const GameGrid = React.memo(function GameGrid({
             styles.flash,
             {
               left: GRID_PAD,
-              top: GRID_PAD + r * (cellSize + CELL_GAP),
+              top: GRID_PAD + r * (liveCellSize + CELL_GAP),
               width: innerW,
-              height: cellSize,
+              height: liveCellSize,
               pointerEvents: "none",
             },
           ]}
@@ -168,9 +206,9 @@ export const GameGrid = React.memo(function GameGrid({
           style={[
             styles.flash,
             {
-              left: GRID_PAD + c * (cellSize + CELL_GAP),
+              left: GRID_PAD + c * (liveCellSize + CELL_GAP),
               top: GRID_PAD,
-              width: cellSize,
+              width: liveCellSize,
               height: innerH,
             },
           ]}
@@ -205,5 +243,17 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(255,0,51,0.45)",
     borderRadius: 6,
+  },
+  hintRing: {
+    position: "absolute",
+    borderWidth: 3,
+    borderColor: "#06ffa5",
+    backgroundColor: "rgba(6,255,165,0.15)",
+    zIndex: 50,
+  },
+  hammerTarget: {
+    backgroundColor: "rgba(255,0,51,0.25)",
+    borderColor: "#ff0033",
+    borderWidth: 1,
   },
 });

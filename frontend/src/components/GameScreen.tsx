@@ -11,6 +11,7 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
@@ -73,6 +74,8 @@ const STORAGE_KEYS = {
   HIGH_SCORE: "ba_high_score",
   COINS: "ba_coins",
   UNDOS: "ba_undos",
+  HINTS: "ba_hints",
+  HAMMERS: "ba_hammers",
   ENERGY: "ba_energy",
   ENERGY_TS: "ba_energy_ts",
   PASS: "ba_pass_active",
@@ -126,6 +129,10 @@ export function GameScreen() {
   const [coins, setCoins] = useState(0);
   const [undos, setUndos] = useState(3);
   const [energy, setEnergy] = useState(MAX_ENERGY);
+  const [hints, setHints] = useState(0);
+  const [hammers, setHammers] = useState(0);
+  const [hintGhost, setHintGhost] = useState<{row: number; col: number; pieceIdx: number} | null>(null);
+  const [hammerMode, setHammerMode] = useState(false);
   const [highScore, setHighScore] = useState(0);
   const [passActive, setPassActive] = useState(false);
   const [dailyDay, setDailyDay] = useState(0);
@@ -171,11 +178,13 @@ export function GameScreen() {
   // Initial load
   useEffect(() => {
     (async () => {
-      const [hs, c, u, e, pa, sfx, mus, hap, lines] = await Promise.all([
+      const [hs, c, u, e, hnt, hmr, pa, sfx, mus, hap, lines] = await Promise.all([
         storage.getItem(STORAGE_KEYS.HIGH_SCORE, 0),
         storage.getItem(STORAGE_KEYS.COINS, 100),
         storage.getItem(STORAGE_KEYS.UNDOS, 3),
         storage.getItem(STORAGE_KEYS.ENERGY, MAX_ENERGY),
+	storage.getItem(STORAGE_KEYS.HINTS, 0),
+        storage.getItem(STORAGE_KEYS.HAMMERS, 0),
         storage.getItem(STORAGE_KEYS.PASS, false),
         storage.getItem(STORAGE_KEYS.SFX, true),
         storage.getItem(STORAGE_KEYS.MUSIC, true),
@@ -186,6 +195,8 @@ export function GameScreen() {
       setCoins((c as number) ?? 100);
       setUndos((u as number) ?? 3);
       setEnergy((e as number) ?? MAX_ENERGY);
+      setHints((hnt as number) ?? 0);
+      setHammers((hmr as number) ?? 0);
       setPassActive((pa as boolean) ?? false);
       setSfxOn((sfx as boolean) ?? true);
       setMusicOn((mus as boolean) ?? true);
@@ -243,6 +254,12 @@ export function GameScreen() {
   useEffect(() => {
     storage.setItem(STORAGE_KEYS.ENERGY, energy);
   }, [energy]);
+  useEffect(() => { 
+    storage.setItem(STORAGE_KEYS.HINTS, hints);
+  }, [hints]);
+  useEffect(() => {
+    storage.setItem(STORAGE_KEYS.HAMMERS, hammers);
+  }, [hammers]);
   useEffect(() => {
     storage.setItem(STORAGE_KEYS.PASS, passActive);
   }, [passActive]);
@@ -391,6 +408,8 @@ export function GameScreen() {
 
   const handleDragEnd = useCallback(
     (idx: number, absX: number, absY: number) => {
+      setHintGhost(null);
+      setHammerMode(false);
       const piece = pieces[idx];
       setDraggingIdx(null);
       const currentHover = hover;
@@ -585,7 +604,15 @@ export function GameScreen() {
       } else if (id === "undos") {
         setUndos((u) => u + 3);
       }
-      // hints/hammer not deeply wired in MVP (would require additional gameplay mechanics)
+      } else if (id === "hints") {
+        setHints((h) => h + 3);
+        haptic.success();
+        playSfx("coin");
+      } else if (id === "hammer") {
+        setHammers((h) => h + 1);
+        haptic.success();
+        playSfx("coin");
+      }
     },
     [coins]
   );
@@ -761,6 +788,66 @@ export function GameScreen() {
     });
   }, []);
 
+  const activateHammer = useCallback(() => {
+    if (hammers <= 0 || hintGhost) return;
+    setHammers((h) => h - 1);
+    setHammerMode(true);
+    haptic.medium();
+    playSfx("tap");
+  }, [hammers, hintGhost]);
+
+  const activateHint = useCallback(() => {
+    if (hints <= 0 || hammerMode) return;
+    setHints((h) => h - 1);
+    haptic.medium();
+    playSfx("tap");
+
+    // Find first available piece and first valid placement
+    for (let pIdx = 0; pIdx < pieces.length; pIdx++) {
+      const piece = pieces[pIdx];
+      if (!piece) continue;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (canPlace(grid, piece, r, c)) {
+            setHintGhost({ row: r, col: c, pieceIdx: pIdx });
+            // Auto-clear after 5 seconds or when user drags
+            setTimeout(() => setHintGhost(null), 5000);
+            return;
+          }
+        }
+      }
+    }
+    // No valid placement found — refund the hint
+    setHints((h) => h + 1);
+    haptic.error();
+  }, [hints, hammerMode, pieces, grid]);
+
+  const handleHammerStrike = useCallback((row: number, col: number) => {
+    if (!hammerMode) return;
+    if (!grid[row][col].filled) {
+      haptic.error();
+      return;
+    }
+    const newGrid = grid.map((r) => r.map((c) => ({ ...c })));
+    newGrid[row][col] = { filled: false, color: null };
+    setGrid(newGrid);
+    setHammerMode(false);
+    haptic.heavy();
+    playSfx("clear");
+    // Spawn a tiny burst at the destroyed cell
+    const baseX = gridScreen.current.x;
+    const baseY = gridScreen.current.y;
+    setBursts((b) => [
+      ...b,
+      {
+        id: burstId.current++,
+        x: baseX + GRID_PAD + col * (liveCellSize + CELL_GAP) + liveCellSize / 2,
+        y: baseY + GRID_PAD + row * (liveCellSize + CELL_GAP) + liveCellSize / 2,
+        color: "#ff0033",
+      },
+    ]);
+  }, [hammerMode, grid, liveCellSize]);
+
   const slotWidth = (SCREEN_W - 24 - 12) / 3;
 
   return (
@@ -807,6 +894,9 @@ export function GameScreen() {
             goldenSkin={passActive}
             onGridLayout={onGridMounted}
             cellSize={liveCellSize}
+            hintGhost={hintGhost}
+            hammerMode={hammerMode}
+            onHammerStrike={handleHammerStrike}
           />
           {/* danger overlay — sized dynamically to the live grid */}
           <Animated.View
@@ -820,6 +910,16 @@ export function GameScreen() {
         </View>
 
         {/* Undo lives in TopBar now */}
+
+        {/* Power-ups */}
+        <View style={styles.powerupsRow}>
+          <TouchableOpacity onPress={activateHint} disabled={hints <= 0} style={[styles.powerupBtn, hints <= 0 && styles.powerupDisabled]}>
+            <Text style={styles.powerupText}>💡 {hints}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={activateHammer} disabled={hammers <= 0 || hammerMode} style={[styles.powerupBtn, (hammers <= 0 || hammerMode) && styles.powerupDisabled]}>
+            <Text style={styles.powerupText}>🔨 {hammers}</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={[styles.trayArea, { paddingBottom: bottomPad }]}>
           <Tray
@@ -959,6 +1059,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
+    flex: 1,
+    overflow: "hidden",
+    width: "100%",
+  },
+  powerupsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 12,
+    paddingVertical: 4,
+    width: "100%",
+  },
+  powerupBtn: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+  },
+  powerupDisabled: {
+    opacity: 0.3,
+  },
+  powerupText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
   dangerOverlay: {
     position: "absolute",
