@@ -1031,7 +1031,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   topContent: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
     width: "100%",
@@ -1053,9 +1052,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
-    flex: 1,
-    overflow: "hidden",
     width: "100%",
+  },
   },
   dangerOverlay: {
     position: "absolute",
