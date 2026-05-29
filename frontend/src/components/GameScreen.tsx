@@ -604,7 +604,7 @@ export function GameScreen() {
       } else if (id === "undos") {
         setUndos((u) => u + 3);
       }
-      } else if (id === "hints") {
+        else if (id === "hints") {
         setHints((h) => h + 3);
         haptic.success();
         playSfx("coin");
