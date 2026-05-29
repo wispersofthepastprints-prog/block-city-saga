@@ -806,6 +806,7 @@ export function GameScreen() {
             flashCols={flashCols}
             goldenSkin={passActive}
             onGridLayout={onGridMounted}
+            cellSize={liveCellSize}
           />
           {/* danger overlay — sized dynamically to the live grid */}
           <Animated.View
@@ -820,15 +821,16 @@ export function GameScreen() {
 
         {/* Undo lives in TopBar now */}
 
-        <Tray
-          pieces={pieces}
-          slotWidth={slotWidth}
-          onDragStart={handleDragStart}
-          onDragMove={handleDragMove}
-          onDragEnd={handleDragEnd}
-          goldenSkin={passActive}
-        />
-        <View style={{ height: bottomPad }} />
+        <View style={[styles.trayArea, { paddingBottom: bottomPad }]}>
+          <Tray
+            pieces={pieces}
+            slotWidth={slotWidth}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+            goldenSkin={passActive}
+          />
+        </View>
       </Animated.View>
       {/* Burst & floating texts overlay (positioned absolutely in window coords) */}
       {bursts.map((b) => (
@@ -933,6 +935,19 @@ const styles = StyleSheet.create({
     maxWidth: 430,
     width: "100%",
     alignSelf: "center",
+  },
+  topContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-start",
+    width: "100%",
+  },
+  trayArea: {
+    height: 90,
+    flexShrink: 0,
+    width: "100%",
+    justifyContent: "center",
+    backgroundColor: "#050510",
   },
   skylineWrap: {
     alignItems: "center",
