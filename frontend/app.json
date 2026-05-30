@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "Tetris Architect",
-    "slug": "tetris-architect",
+    "name": "Block City Saga",
+    "slug": "block-city-saga",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "tetrisarchitect",
+    "scheme": "blockcitysaga",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "primaryColor": "#ff006e",
-    "description": "Tetris Architect — drag, drop, clear & build a neon city. A premium, free-to-play block puzzle.",
+    "description": "Block City Saga — drag, drop, clear & build a neon city. A premium, free-to-play block puzzle.",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.wispersofthepast.tetrisarchitect",
+      "bundleIdentifier": "com.wispersofthepast.blockcitysaga",
       "buildNumber": "3",
       "config": {
         "usesNonExemptEncryption": false
@@ -24,26 +24,15 @@
         "backgroundColor": "#050510"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.wispersofthepast.tetrisarchitect",
+      "package": "com.wispersofthepast.blockcitysaga",
       "versionCode": 3,
       "permissions": [
-        "VIBRATE",
-        "com.google.android.gms.permission.AD_ID",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "VIBRATE",
         "com.google.android.gms.permission.AD_ID",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "blockedPermissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "CAMERA",
-        "RECORD_AUDIO",
-        "READ_CONTACTS",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "CAMERA",
@@ -80,11 +69,6 @@
         }
       ]
     ],
-    "react-native-google-mobile-ads": {
-      "android_app_id": "ca-app-pub-1508365322358813~3278044849",
-      "ios_app_id": "ca-app-pub-1508365322358813~0000000000",
-      "user_tracking_usage_description": "This identifier is used to deliver personalized ads."
-    },
     "experiments": {
       "typedRoutes": true
     },
