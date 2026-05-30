@@ -28,6 +28,7 @@ type Props = {
   goldenSkin: boolean;
   onGridLayout: (x: number, y: number) => void;
   cellSize?: number;
+  maxHeight?: number;
   hintGhost?: { row: number; col: number; pieceIdx: number } | null;
   hammerMode?: boolean;
   onHammerStrike?: (row: number, col: number) => void;
@@ -43,6 +44,7 @@ export const GameGrid = React.memo(function GameGrid({
   goldenSkin,
   onGridLayout,
   cellSize: propCellSize,
+  maxHeight,
   hintGhost,
   hammerMode,
   onHammerStrike,
@@ -51,13 +53,13 @@ export const GameGrid = React.memo(function GameGrid({
 
   const liveCellSize = useMemo(() => {
     if (propCellSize) return propCellSize;
-    const reserved = 440;
-    const available = Math.max(winH - reserved, 280);
-    const raw = Math.floor(
-      (available - (ROWS - 1) * CELL_GAP - GRID_PAD * 2) / ROWS
-    );
+    // If parent measured us, use that. Otherwise fall back to screen estimate.
+    const baseH = maxHeight && maxHeight > 0 ? maxHeight : winH;
+    const reserved = maxHeight && maxHeight > 0 ? 0 : 440;
+    const available = Math.max(baseH - reserved - (ROWS - 1) * CELL_GAP - GRID_PAD * 2, ROWS * MIN_CELL);
+    const raw = Math.floor(available / ROWS);
     return Math.max(MIN_CELL, Math.min(MAX_CELL, raw));
-  }, [propCellSize, winH]);
+  }, [propCellSize, winH, maxHeight]);
 
   const innerW = COLS * liveCellSize + (COLS - 1) * CELL_GAP;
   const innerH = ROWS * liveCellSize + (ROWS - 1) * CELL_GAP;

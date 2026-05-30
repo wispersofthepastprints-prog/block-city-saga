@@ -133,6 +133,7 @@ export function GameScreen() {
   const [hammers, setHammers] = useState(0);
   const [hintGhost, setHintGhost] = useState<{row: number; col: number; pieceIdx: number} | null>(null);
   const [hammerMode, setHammerMode] = useState(false);
+  const [gridContainerHeight, setGridContainerHeight] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [passActive, setPassActive] = useState(false);
   const [dailyDay, setDailyDay] = useState(0);
@@ -604,7 +605,7 @@ export function GameScreen() {
       } else if (id === "undos") {
         setUndos((u) => u + 3);
       }
-        else if (id === "hints") {
+      } else if (id === "hints") {
         setHints((h) => h + 3);
         haptic.success();
         playSfx("coin");
@@ -899,6 +900,7 @@ export function GameScreen() {
             goldenSkin={passActive}
             onGridLayout={onGridMounted}
             cellSize={liveCellSize}
+            maxHeight={gridContainerHeight > 0 ? gridContainerHeight : undefined}
             hintGhost={hintGhost}
             hammerMode={hammerMode}
             onHammerStrike={handleHammerStrike}
