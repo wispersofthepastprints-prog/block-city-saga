@@ -1,6 +1,12 @@
-// 8x10 game grid + hover overlay
+// 8x10 game grid + hover overlay + pinch-to-zoom
 import React, { useMemo } from "react";
 import { View, StyleSheet, useWindowDimensions } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  runOnJS,
+} from "react-native-reanimated";
 import { Block } from "./Block";
 import type { Cell } from "@/src/game/logic";
 import { COLS, ROWS } from "@/src/game/logic";
@@ -29,6 +35,8 @@ type Props = {
   onGridLayout: (x: number, y: number) => void;
   cellSize?: number;
   maxHeight?: number;
+  scale?: number;
+  onScaleChange?: (scale: number) => void;
   hintGhost?: { row: number; col: number; pieceIdx: number } | null;
   hammerMode?: boolean;
   onHammerStrike?: (row: number, col: number) => void;
@@ -45,26 +53,55 @@ export const GameGrid = React.memo(function GameGrid({
   onGridLayout,
   cellSize: propCellSize,
   maxHeight,
+  scale: userScale = 1,
+  onScaleChange,
   hintGhost,
   hammerMode,
   onHammerStrike,
 }: Props) {
   const { height: winH } = useWindowDimensions();
+  const pinchScale = useSharedValue(1);
+  const baseScale = useSharedValue(userScale);
+
+  React.useEffect(() => {
+    baseScale.value = userScale;
+  }, [userScale]);
 
   const liveCellSize = useMemo(() => {
-    if (propCellSize) return propCellSize;
-    // If parent measured us, use that. Otherwise fall back to screen estimate.
-    const baseH = maxHeight && maxHeight > 0 ? maxHeight : winH;
-    const reserved = maxHeight && maxHeight > 0 ? 0 : 440;
-    const available = Math.max(baseH - reserved - (ROWS - 1) * CELL_GAP - GRID_PAD * 2, ROWS * MIN_CELL);
-    const raw = Math.floor(available / ROWS);
-    return Math.max(MIN_CELL, Math.min(MAX_CELL, raw));
-  }, [propCellSize, winH, maxHeight]);
+    let base: number;
+    if (propCellSize) {
+      base = propCellSize;
+    } else {
+      const h = maxHeight && maxHeight > 0 ? maxHeight : winH;
+      const reserved = maxHeight && maxHeight > 0 ? 0 : 440;
+      const available = Math.max(h - reserved - (ROWS - 1) * CELL_GAP - GRID_PAD * 2, ROWS * MIN_CELL);
+      base = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(available / ROWS)));
+    }
+    return Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(base * userScale)));
+  }, [propCellSize, winH, maxHeight, userScale]);
 
   const innerW = COLS * liveCellSize + (COLS - 1) * CELL_GAP;
   const innerH = ROWS * liveCellSize + (ROWS - 1) * CELL_GAP;
   const gridW = innerW + GRID_PAD * 2;
   const gridH = innerH + GRID_PAD * 2;
+
+  // Pinch gesture
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      pinchScale.value = e.scale;
+    })
+    .onEnd(() => {
+      const newScale = Math.max(0.5, Math.min(1.5, baseScale.value * pinchScale.value));
+      baseScale.value = newScale;
+      pinchScale.value = 1;
+      if (onScaleChange) {
+        runOnJS(onScaleChange)(newScale);
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pinchScale.value }],
+  }));
 
   const hoverCells: { r: number; c: number; color: PieceColor; valid: boolean }[] = [];
   if (hover) {
@@ -82,7 +119,7 @@ export const GameGrid = React.memo(function GameGrid({
     }
   }
 
-  return (
+  const gridContent = (
     <View
       style={[styles.wrap, { width: gridW, height: gridH }]}
       onLayout={(e) => {
@@ -218,9 +255,21 @@ export const GameGrid = React.memo(function GameGrid({
       ))}
     </View>
   );
+
+  return (
+    <GestureDetector gesture={pinchGesture}>
+      <Animated.View style={[styles.pinchContainer, animatedStyle]}>
+        {gridContent}
+      </Animated.View>
+    </GestureDetector>
+  );
 });
 
 const styles = StyleSheet.create({
+  pinchContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   wrap: {
     backgroundColor: "#0a0a18",
     borderRadius: 12,

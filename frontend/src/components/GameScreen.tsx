@@ -85,6 +85,7 @@ const STORAGE_KEYS = {
   MUSIC: "ba_music",
   HAPTICS: "ba_haptics",
   LINES: "ba_lines",
+  GRID_SCALE: "ba_grid_scale",
 };
 
 const MAX_ENERGY = 5;
@@ -134,6 +135,7 @@ export function GameScreen() {
   const [hintGhost, setHintGhost] = useState<{row: number; col: number; pieceIdx: number} | null>(null);
   const [hammerMode, setHammerMode] = useState(false);
   const [gridContainerHeight, setGridContainerHeight] = useState(0);
+  const [gridScale, setGridScale] = useState(1.0);
   const [highScore, setHighScore] = useState(0);
   const [passActive, setPassActive] = useState(false);
   const [dailyDay, setDailyDay] = useState(0);
@@ -179,7 +181,7 @@ export function GameScreen() {
   // Initial load
   useEffect(() => {
     (async () => {
-      const [hs, c, u, e, hnt, hmr, pa, sfx, mus, hap, lines] = await Promise.all([
+      const [hs, c, u, e, hnt, hmr, pa, sfx, mus, hap, lines, savedScale] = await Promise.all([
         storage.getItem(STORAGE_KEYS.HIGH_SCORE, 0),
         storage.getItem(STORAGE_KEYS.COINS, 100),
         storage.getItem(STORAGE_KEYS.UNDOS, 3),
@@ -191,6 +193,7 @@ export function GameScreen() {
         storage.getItem(STORAGE_KEYS.MUSIC, true),
         storage.getItem(STORAGE_KEYS.HAPTICS, true),
         storage.getItem(STORAGE_KEYS.LINES, 0),
+        storage.getItem(STORAGE_KEYS.GRID_SCALE, 1.0),
       ]);
       setHighScore((hs as number) ?? 0);
       setCoins((c as number) ?? 100);
@@ -900,6 +903,8 @@ export function GameScreen() {
             onGridLayout={onGridMounted}
             cellSize={liveCellSize}
             maxHeight={gridContainerHeight > 0 ? gridContainerHeight : undefined}
+            scale={gridScale}
+            onScaleChange={setGridScale}
             hintGhost={hintGhost}
             hammerMode={hammerMode}
             onHammerStrike={handleHammerStrike}
@@ -917,6 +922,26 @@ export function GameScreen() {
 
         {/* Undo lives in TopBar now */}
 
+        {/* Grid zoom controls */}
+        <View style={styles.zoomRow}>
+          <TouchableOpacity
+            onPress={() => setGridScale((s) => Math.max(0.5, s - 0.1))}
+            style={styles.zoomBtn}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.zoomText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.zoomLabel}>{Math.round(gridScale * 100)}%</Text>
+          <TouchableOpacity
+            onPress={() => setGridScale((s) => Math.min(1.5, s + 0.1))}
+            style={styles.zoomBtn}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.zoomText}>+</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.zoomHint}>👆 Pinch the board to resize</Text>
+
         <View style={[styles.trayArea, { paddingBottom: bottomPad }]}>
           <Tray
             pieces={pieces}
@@ -925,6 +950,7 @@ export function GameScreen() {
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
             goldenSkin={passActive}
+            scale={gridScale}
           />
         </View>
       </Animated.View>
@@ -1067,5 +1093,12 @@ const styles = StyleSheet.create({
     borderWidth: 6,
     borderColor: "#ff0033",
     alignSelf: "center",
+  },
+  zoomHint: {
+    color: "rgba(255,255,255,0.35)",
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 2,
+    marginBottom: 2,
   },
 });

@@ -1,5 +1,5 @@
 // Bottom tray + drag-drop slots + floating ghost piece
-import React, { useEffect } from "react";
+import React from "react";
 import { View, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -8,23 +8,23 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
-  SharedValue,
 } from "react-native-reanimated";
 import { PieceView } from "./PieceView";
 import type { Piece } from "@/src/game/pieces";
 import { haptic } from "@/src/services/audio";
 
-const TRAY_CELL = 16; // compact tray preview
+const TRAY_CELL_BASE = 16;
 const TRAY_GAP = 2;
-const GHOST_CELL = 36; // matches grid cell
+const GHOST_CELL_BASE = 36;
 
 type Props = {
   pieces: (Piece | null)[];
   slotWidth: number;
   onDragStart: (idx: number) => void;
   onDragMove: (x: number, y: number) => void;
-  onDragEnd: (idx: number, x: number, y: number) => boolean; // returns true if placed
+  onDragEnd: (idx: number, x: number, y: number) => boolean;
   goldenSkin: boolean;
+  scale?: number;
 };
 
 export function Tray({
@@ -34,7 +34,11 @@ export function Tray({
   onDragMove,
   onDragEnd,
   goldenSkin,
+  scale = 1,
 }: Props) {
+  const trayCell = Math.max(10, Math.floor(TRAY_CELL_BASE * scale));
+  const ghostCell = Math.max(20, Math.floor(GHOST_CELL_BASE * scale));
+
   return (
     <View style={[styles.tray, { gap: 6 }]} testID="game-tray">
       {pieces.map((piece, i) => (
@@ -47,6 +51,8 @@ export function Tray({
               onDragMove={onDragMove}
               onDragEnd={onDragEnd}
               goldenSkin={goldenSkin}
+              trayCell={trayCell}
+              ghostCell={ghostCell}
             />
           ) : (
             <View style={styles.emptySlot} />
@@ -64,6 +70,8 @@ function DraggableSlot({
   onDragMove,
   onDragEnd,
   goldenSkin,
+  trayCell,
+  ghostCell,
 }: {
   piece: Piece;
   idx: number;
@@ -71,14 +79,13 @@ function DraggableSlot({
   onDragMove: (x: number, y: number) => void;
   onDragEnd: (idx: number, x: number, y: number) => boolean;
   goldenSkin: boolean;
+  trayCell: number;
+  ghostCell: number;
 }) {
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
   const scale = useSharedValue(1);
   const isDragging = useSharedValue(0);
-
-  const pieceW = piece.shape[0].length;
-  const pieceH = piece.shape.length;
 
   const onMoveJS = (x: number, y: number) => {
     onDragMove(x, y);
@@ -88,10 +95,7 @@ function DraggableSlot({
     onDragStart(idx);
   };
   const onEndJS = (x: number, y: number) => {
-    const placed = onDragEnd(idx, x, y);
-    if (!placed) {
-      // snap back animation handled below
-    }
+    onDragEnd(idx, x, y);
   };
 
   const pan = Gesture.Pan()
@@ -108,7 +112,6 @@ function DraggableSlot({
     })
     .onEnd((e) => {
       runOnJS(onEndJS)(e.absoluteX, e.absoluteY);
-      // snap back regardless; parent will hide the piece if it was placed.
       tx.value = withSpring(0, { damping: 14, stiffness: 180 });
       ty.value = withSpring(0, { damping: 14, stiffness: 180 });
       scale.value = withTiming(1, { duration: 150 });
@@ -116,11 +119,8 @@ function DraggableSlot({
     });
 
   const animatedStyle = useAnimatedStyle(() => {
-    // Ghost piece is rendered larger when dragging (closer to grid cell size)
-    const draggingScale =
-      isDragging.value === 1 ? GHOST_CELL / TRAY_CELL : 1;
-    // Fixed lift so finger sits below the ghost piece (matches GameScreen LIFT).
-    const liftY = isDragging.value === 1 ? -70 : 0;
+    const draggingScale = isDragging.value === 1 ? ghostCell / trayCell : 1;
+    const liftY = isDragging.value === 1 ? -ghostCell * 2 : 0;
     return {
       transform: [
         { translateX: tx.value },
@@ -139,7 +139,7 @@ function DraggableSlot({
       >
         <PieceView
           piece={piece}
-          cellSize={TRAY_CELL}
+          cellSize={trayCell}
           gap={TRAY_GAP}
           golden={goldenSkin}
         />
@@ -155,8 +155,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: 6,
     paddingBottom: 2,
-    minHeight: 82,
+    height: 90,
+    flexShrink: 0,
     alignItems: "center",
+    backgroundColor: "#050510",
   },
   slotWrap: {
     height: 74,
