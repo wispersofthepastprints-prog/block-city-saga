@@ -25,7 +25,7 @@
       },
       "edgeToEdgeEnabled": false,
       "package": "com.wispersofthepast.blockcitysaga",
-      "versionCode": 25,
+      "versionCode": 26,
       "permissions": [
         "VIBRATE",
         "com.google.android.gms.permission.AD_ID",
