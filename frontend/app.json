@@ -12,7 +12,7 @@
     "description": "Block City Saga — drag, drop, clear & build a neon city. A premium, free-to-play block puzzle.",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.wispersofthepast.blockcitysaga",
+      "bundleIdentifier": "com.wispersofthepast.tetrisarchitect",
       "buildNumber": "3",
       "config": {
         "usesNonExemptEncryption": false
@@ -24,7 +24,7 @@
         "backgroundColor": "#050510"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.wispersofthepast.blockcitysaga",
+      "package": "com.wispersofthepast.tetrisarchitect",
       "versionCode": 26,
       "permissions": [
         "VIBRATE",
