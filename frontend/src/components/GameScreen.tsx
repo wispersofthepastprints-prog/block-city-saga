@@ -942,7 +942,7 @@ export function GameScreen() {
         </View>
         <Text style={styles.zoomHint}>👆 Pinch the board to resize</Text>
 
-        <View style={[styles.trayArea, { paddingBottom: bottomPad }]}>
+        <View style={[styles.trayArea, { paddingBottom: Math.max(bottomPad || 0, 24) }]}>
           <Tray
             pieces={pieces}
             slotWidth={slotWidth}
