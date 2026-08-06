@@ -566,7 +566,7 @@ export function SettingsModal({
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/privacy-policy.html"
+                "https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-privacy.html"
               ).catch(() => {})
             }
             testID="settings-privacy"
@@ -577,7 +577,7 @@ export function SettingsModal({
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/terms-of-service.html"
+                "https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-terms.html"
               ).catch(() => {})
             }
             testID="settings-terms"
@@ -655,7 +655,7 @@ function SettingsRow({
   label: string;
   on: boolean;
   onToggle: () => void;
-  testID: string;
+  testID?: string;
 }) {
   return (
     <TouchableOpacity
