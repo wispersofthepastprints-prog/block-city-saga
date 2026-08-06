@@ -566,7 +566,7 @@ export function SettingsModal({
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-privacy.html"
+                "https://wispersofthepastprints-prog.github.io/IvoryOS/tetris-architect-privacy.html"
               ).catch(() => {})
             }
             testID="settings-privacy"
@@ -577,7 +577,7 @@ export function SettingsModal({
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-terms.html"
+                "https://wispersofthepastprints-prog.github.io/IvoryOS/tetris-architect-terms.html"
               ).catch(() => {})
             }
             testID="settings-terms"
