@@ -80,8 +80,8 @@ Public API (identical in both):
 - **Haptics**: every interaction — toggleable
 
 ## Compliance
-- **Privacy Policy**: https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-privacy.html
-- **Terms of Service**: https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-terms.html
+- **Privacy Policy**: https://wispersofthepastprints-prog.github.io/IvoryOS/tetris-architect-privacy.html
+- **Terms of Service**: https://wispersofthepastprints-prog.github.io/IvoryOS/tetris-architect-terms.html
 - Both linked in Settings modal as required by Play Store IAP/ads policy
 
 ---
@@ -124,7 +124,7 @@ Public API (identical in both):
 6. **Content rating** (IARC questionnaire): puzzle game, no objectionable content → rated E
 7. **Target audience**: 13+
 8. **Data Safety**: declare AsyncStorage, no PII, IAP via Google Play, AdMob ads, advertising ID usage
-9. **Privacy Policy URL**: https://wispersofthepastprints-prog.github.io/WhisperBall/tetris-architect-privacy.html
+9. **Privacy Policy URL**: https://wispersofthepastprints-prog.github.io/IvoryOS/tetris-architect-privacy.html
 10. **App access**: "All functionality is available without restrictions"
 11. **Ads**: yes, contains ads
 
