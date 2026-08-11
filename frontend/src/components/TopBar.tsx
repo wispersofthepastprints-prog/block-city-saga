@@ -20,6 +20,8 @@ type Props = {
   undos: number;
   onPressCoins: () => void;
   onPressEnergy: () => void;
+  onPressSettings: () => void;
+  onPressUndo: () => void;
   hints?: number;
   hammers?: number;
   hammerMode?: boolean;
@@ -37,6 +39,8 @@ export function TopBar({
   undos,
   onPressCoins,
   onPressEnergy,
+  onPressSettings,
+  onPressUndo,
   hints = 0,
   hammers = 0,
   hammerMode = false,
@@ -75,11 +79,11 @@ export function TopBar({
           <Text style={styles.pillText}>{streak}x</Text>
         </View>
 
-        {/* Undos */}
-        <View style={styles.pill}>
+        {/* Undos — tappable (was a dead View) */}
+        <TouchableOpacity onPress={onPressUndo} style={styles.pill} activeOpacity={0.7} testID="top-bar-undo">
           <Icon name="undo" size={14} color="#00d4ff" />
           <Text style={styles.pillText}>{undos}</Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Hints */}
         <TouchableOpacity
@@ -119,8 +123,8 @@ export function TopBar({
         </TouchableOpacity>
       </View>
 
-      {/* Settings */}
-      <TouchableOpacity onPress={onPressEnergy} style={styles.gear} activeOpacity={0.7}>
+      {/* Settings — was previously miswired to onPressEnergy */}
+      <TouchableOpacity onPress={onPressSettings} style={styles.gear} activeOpacity={0.7} testID="top-bar-settings">
         <Icon name="settings" size={20} color="#fff" />
       </TouchableOpacity>
     </View>

@@ -54,7 +54,10 @@ export function FloatingText({
           top: y,
           color,
           fontSize: size,
-          textShadow: `0 0 12px ${color}`,
+          // React Native uses split shadow props, not the CSS `textShadow` shorthand
+          textShadowColor: color,
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 12,
         },
         animatedStyle,
       ]}

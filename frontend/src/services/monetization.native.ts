@@ -1,40 +1,68 @@
-// Monetization service — RevenueCat (Google Play Billing) + Google AdMob rewarded ads.
+// Monetization service — RevenueCat (Google Play Billing) + Google AdMob.
+//
+// Whisper Ball max-revenue strategy applied to Block City Saga:
+//   • Dual one-time IAPs: "remove_ads" ($4.99) and "premium_pack" ($6.99).
+//     Premium Pack INCLUDES ad removal plus gameplay perks (2x score,
+//     golden skins, unlimited energy). No subscriptions.
+//   • Rewarded video "Continue with Ad" on game over (and energy refill) —
+//     opt-in, available to ALL users including ad-free ones.
+//   • Interstitials with a hard 90-second frequency cap, fired by the caller
+//     on "back to menu" (session restart). Never shown to ad-free users.
 //
 // Architecture:
-//   • All native SDKs are dynamically imported and ONLY when running in a dev-client
-//     or production build (Constants.appOwnership !== "expo"). In Expo Go preview
-//     and on web, every function returns a safe mock so the rest of the app keeps
-//     working without crashing.
-//   • RevenueCat config: entitlement ID "Tetris Architect Pro", products are
-//     surfaced through a remote-configured Paywall (no hand-rolled UI).
-//   • AdMob: rewarded ads use TestIds.REWARDED in __DEV__, production unit ID
-//     otherwise. Ads are preloaded eagerly and a fresh ad is loaded after each show.
+//   • All native SDKs are dynamically imported and ONLY when running in a
+//     dev-client or production build (Constants.appOwnership !== "expo").
+//     In Expo Go preview and on web, every function returns a safe mock so
+//     the rest of the app keeps working without crashing.
+//   • AdMob: rewarded + interstitial ads use TestIds in __DEV__, production
+//     unit IDs otherwise. Ads are preloaded eagerly and a fresh ad is loaded
+//     after each show.
 //
 // Env vars (set in /app/frontend/.env):
-//   EXPO_PUBLIC_RC_ANDROID_KEY       — RevenueCat Android SDK key (test_ or goog_)
-//   EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID — AdMob production rewarded ad unit id
+//   EXPO_PUBLIC_RC_ANDROID_KEY            — RevenueCat Android SDK key (test_ or goog_)
+//   EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID    — AdMob production rewarded ad unit id
+//   EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID — AdMob production interstitial ad unit id
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 
-export const ENTITLEMENT_ID = "Tetris Architect Pro";
+// ---------------------------------------------------------------------------
+// Entitlements & products (must match RevenueCat dashboard + Play Console)
+// ---------------------------------------------------------------------------
 
-// Feature flag: Season Pass IAPs are not yet wired in Play Console / RevenueCat.
-// While false, all Pass entry points are hidden in the UI and replaced with a
-// "Coming Soon" placeholder. Flip this to `true` once the 3 products
-// (lifetime / yearly / monthly) exist in both dashboards.
-export const IS_PASS_AVAILABLE = false;
-
-export const PRODUCT_IDS = {
-  lifetime: "lifetime",
-  yearly: "yearly",
-  monthly: "monthly",
+export const ENTITLEMENTS = {
+  REMOVE_ADS: "remove_ads",
+  PREMIUM: "premium_pack",
 } as const;
 
-export type ProductId = keyof typeof PRODUCT_IDS;
+// Grandfathered: the pre-rename entitlement ID from the "Tetris Architect"
+// era. Anyone holding it is treated as full Premium.
+const LEGACY_ENTITLEMENT_ID = "Tetris Architect Pro";
+
+export const PRODUCT_IDS = {
+  REMOVE_ADS: "remove_ads", // $4.99 one-time — kills interstitials
+  PREMIUM_PACK: "premium_pack", // $6.99 one-time — ad removal + all perks
+} as const;
+
+export type ProductId = (typeof PRODUCT_IDS)[keyof typeof PRODUCT_IDS];
+
+export type EntitlementState = {
+  premium: boolean; // Premium Pack (or grandfathered legacy Pro)
+  removeAds: boolean; // Remove Ads OR Premium Pack
+};
 
 export const IS_EXPO_GO = Constants.appOwnership === "expo";
 export const IS_NATIVE_RUNTIME =
   !IS_EXPO_GO && (Platform.OS === "android" || Platform.OS === "ios");
+
+function stateFromCustomerInfo(info: any): EntitlementState {
+  const active = info?.entitlements?.active ?? {};
+  const premium =
+    active[ENTITLEMENTS.PREMIUM] !== undefined ||
+    active[LEGACY_ENTITLEMENT_ID] !== undefined;
+  // Premium Pack includes ad removal.
+  const removeAds = premium || active[ENTITLEMENTS.REMOVE_ADS] !== undefined;
+  return { premium, removeAds };
+}
 
 // ---------------------------------------------------------------------------
 // Lazy native module loaders — never crash in Expo Go / web
@@ -189,16 +217,15 @@ export async function initializeMonetization(): Promise<void> {
   try {
     const Purchases = await getPurchases();
     if (Purchases) {
-      const apiKey =
-        process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? "";
+      const apiKey = process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? "";
       if (!apiKey) {
         console.warn(
-          "[RevenueCat] EXPO_PUBLIC_RC_ANDROID_KEY is not set — purchases disabled"
+          "[RevenueCat] EXPO_PUBLIC_RC_ANDROID_KEY is not set — purchases disabled",
         );
       } else {
         if (apiKey.startsWith("test_")) {
           console.warn(
-            "[RevenueCat] Using a TEST key — real purchases will not go through. Swap for a goog_… production key before submitting to Play Store."
+            "[RevenueCat] Using a TEST key — real purchases will not go through. Swap for a goog_… production key before submitting to Play Store.",
           );
         }
         if (__DEV__) {
@@ -231,8 +258,9 @@ export async function initializeMonetization(): Promise<void> {
       if (ads?.default) {
         await ads.default().initialize();
         console.log("[AdMob] MobileAds initialised");
-        // Preload first rewarded ad
+        // Preload first rewarded + interstitial ads
         void preloadRewardedAd();
+        void preloadInterstitial();
       }
     }
   } catch (e) {
@@ -241,29 +269,28 @@ export async function initializeMonetization(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Entitlement check
+// Entitlement state
 // ---------------------------------------------------------------------------
 
-export async function hasProEntitlement(): Promise<boolean> {
+export async function getEntitlementState(): Promise<EntitlementState> {
   const Purchases = await getPurchases();
-  if (!Purchases) return false;
+  if (!Purchases) return { premium: false, removeAds: false };
   try {
     const info = await Purchases.getCustomerInfo();
-    return info?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
+    return stateFromCustomerInfo(info);
   } catch (e) {
     console.warn("[RevenueCat] getCustomerInfo failed", e);
-    return false;
+    return { premium: false, removeAds: false };
   }
 }
 
 export async function addEntitlementListener(
-  cb: (hasPro: boolean) => void
+  cb: (state: EntitlementState) => void,
 ): Promise<() => void> {
   const Purchases = await getPurchases();
   if (!Purchases) return () => {};
   const listener = (info: any) => {
-    const active = info?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
-    cb(active);
+    cb(stateFromCustomerInfo(info));
   };
   try {
     Purchases.addCustomerInfoUpdateListener(listener);
@@ -279,48 +306,7 @@ export async function addEntitlementListener(
 }
 
 // ---------------------------------------------------------------------------
-// Paywall (presents the remote-configured RevenueCat Paywall)
-// ---------------------------------------------------------------------------
-
-export type PaywallResult = "purchased" | "restored" | "cancelled" | "error" | "not_presented";
-
-export async function presentProPaywall(): Promise<{
-  didGainAccess: boolean;
-  result: PaywallResult;
-}> {
-  const RevenueCatUI = await getRevenueCatUI();
-  if (!RevenueCatUI) {
-    // Mocked path — pretend the user purchased so devs can test the unlock flow in Expo Go.
-    console.log("[RevenueCat] (mock) paywall — granting access");
-    await new Promise((r) => setTimeout(r, 800));
-    return { didGainAccess: true, result: "purchased" };
-  }
-  try {
-    const mod = await import("react-native-purchases-ui");
-    const PAYWALL_RESULT = (mod as any).PAYWALL_RESULT;
-    const result = await RevenueCatUI.presentPaywallIfNeeded({
-      requiredEntitlementIdentifier: ENTITLEMENT_ID,
-    });
-    let normalized: PaywallResult = "error";
-    if (PAYWALL_RESULT) {
-      if (result === PAYWALL_RESULT.PURCHASED) normalized = "purchased";
-      else if (result === PAYWALL_RESULT.RESTORED) normalized = "restored";
-      else if (result === PAYWALL_RESULT.CANCELLED) normalized = "cancelled";
-      else if (result === PAYWALL_RESULT.NOT_PRESENTED) normalized = "not_presented";
-    }
-    const didGainAccess =
-      normalized === "purchased" ||
-      normalized === "restored" ||
-      normalized === "not_presented";
-    return { didGainAccess, result: normalized };
-  } catch (e) {
-    console.warn("[RevenueCat] paywall error", e);
-    return { didGainAccess: false, result: "error" };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Customer Center (manage / cancel / restore subscriptions)
+// Customer Center (manage / restore purchases)
 // ---------------------------------------------------------------------------
 
 export async function presentCustomerCenter(): Promise<void> {
@@ -337,11 +323,11 @@ export async function presentCustomerCenter(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Direct product purchase by ID (lifetime/yearly/monthly) — alternative to paywall
+// Direct product purchase by ID (remove_ads / premium_pack)
 // ---------------------------------------------------------------------------
 
 export async function purchaseProduct(
-  productId: string
+  productId: string,
 ): Promise<{ success: boolean; productId: string }> {
   const Purchases = await getPurchases();
   if (!Purchases) {
@@ -352,15 +338,18 @@ export async function purchaseProduct(
   try {
     const offerings = await Purchases.getOfferings();
     const pkg = offerings?.current?.availablePackages?.find(
-      (p: any) => p.identifier === productId || p.product?.identifier === productId
+      (p: any) =>
+        p.identifier === productId || p.product?.identifier === productId,
     );
     if (!pkg) {
-      console.warn(`[RevenueCat] package ${productId} not found in current offering`);
+      console.warn(
+        `[RevenueCat] package ${productId} not found in current offering`,
+      );
       return { success: false, productId };
     }
     const { customerInfo } = await Purchases.purchasePackage(pkg);
-    const success =
-      customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
+    const state = stateFromCustomerInfo(customerInfo);
+    const success = state.premium || state.removeAds;
     return { success, productId };
   } catch (e: any) {
     if (e?.userCancelled) {
@@ -386,7 +375,7 @@ export async function restorePurchases(): Promise<{ entitlements: string[] }> {
 }
 
 // ---------------------------------------------------------------------------
-// AdMob rewarded ads
+// AdMob rewarded ads (opt-in: continue on game over, energy refill)
 // ---------------------------------------------------------------------------
 
 let rewardedAd: any = null;
@@ -399,8 +388,7 @@ async function preloadRewardedAd(): Promise<void> {
   if (!ads) return;
   try {
     const { RewardedAd, RewardedAdEventType, TestIds } = ads as any;
-    const productionUnit =
-      process.env.EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID ?? "";
+    const productionUnit = process.env.EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID ?? "";
     const unitId = __DEV__ || !productionUnit ? TestIds.REWARDED : productionUnit;
     rewardedAd = RewardedAd.createForAdRequest(unitId, {
       // Honor the user's UMP / GDPR choice. If they opted out of personalised
@@ -471,6 +459,109 @@ export async function showRewardedAd(): Promise<{ rewarded: boolean }> {
     } catch (e) {
       console.warn("[AdMob] show error", e);
       resolve({ rewarded: false });
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// AdMob interstitial ads — Whisper Ball 90-second frequency cap
+//
+// Fired by the CALLER on "back to menu" (session restart in this game).
+// The cap is enforced HERE in the service so no caller can ever over-serve.
+// Ad-free users (Remove Ads / Premium Pack) are filtered by the caller —
+// GameScreen never invokes this for them.
+// ---------------------------------------------------------------------------
+
+export const INTERSTITIAL_COOLDOWN_MS = 90_000; // 90 seconds, hard cap
+
+let interstitialAd: any = null;
+let interstitialLoaded = false;
+let interstitialLoading = false;
+let lastInterstitialShownAt = 0;
+
+async function preloadInterstitial(): Promise<void> {
+  if (interstitialLoaded || interstitialLoading) return;
+  if (!adsCanBeRequested) return;
+  const ads = await getGoogleMobileAds();
+  if (!ads) return;
+  try {
+    const { InterstitialAd, TestIds } = ads as any;
+    const productionUnit =
+      process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID ?? "";
+    const unitId =
+      __DEV__ || !productionUnit ? TestIds.INTERSTITIAL : productionUnit;
+    interstitialAd = InterstitialAd.createForAdRequest(unitId, {
+      requestNonPersonalizedAdsOnly: adsRequireNonPersonalized,
+    });
+    interstitialAd.addAdEventListener("loaded", () => {
+      interstitialLoaded = true;
+      interstitialLoading = false;
+    });
+    interstitialAd.addAdEventListener("closed", () => {
+      interstitialLoaded = false;
+      interstitialAd = null;
+      // Preload the next one
+      void preloadInterstitial();
+    });
+    interstitialAd.addAdEventListener("error", (err: any) => {
+      console.warn("[AdMob] interstitial error", err);
+      interstitialLoading = false;
+      interstitialLoaded = false;
+      interstitialAd = null;
+    });
+    interstitialLoading = true;
+    interstitialAd.load();
+  } catch (e) {
+    console.warn("[AdMob] interstitial preload failed", e);
+    interstitialLoading = false;
+  }
+}
+
+/**
+ * Show an interstitial IF the 90-second cap allows it.
+ * Returns { shown } — false means the cap or ad availability suppressed it,
+ * which is a normal, expected outcome (callers should not treat it as an error).
+ */
+export async function showInterstitialAd(): Promise<{ shown: boolean }> {
+  if (!IS_NATIVE_RUNTIME) {
+    // Mock path — simulate a short "ad".
+    console.log("[AdMob] (mock) interstitial");
+    await new Promise((r) => setTimeout(r, 600));
+    return { shown: true };
+  }
+
+  if (Date.now() - lastInterstitialShownAt < INTERSTITIAL_COOLDOWN_MS) {
+    console.log("[AdMob] interstitial suppressed by 90s cap");
+    return { shown: false };
+  }
+
+  const ads = await getGoogleMobileAds();
+  if (!ads) return { shown: false };
+
+  if (!interstitialLoaded) {
+    void preloadInterstitial();
+    // Wait up to 3s for an ad to load — interstitials must never stall the UI
+    const started = Date.now();
+    while (!interstitialLoaded && Date.now() - started < 3000) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+
+  if (!interstitialAd || !interstitialLoaded) {
+    console.warn("[AdMob] no interstitial available");
+    return { shown: false };
+  }
+
+  return new Promise<{ shown: boolean }>((resolve) => {
+    try {
+      interstitialAd.addAdEventListener("closed", () => {
+        lastInterstitialShownAt = Date.now();
+        resolve({ shown: true });
+      });
+      interstitialAd.show();
+    } catch (e) {
+      console.warn("[AdMob] interstitial show error", e);
+      resolve({ shown: false });
     }
   });
 }

@@ -37,7 +37,7 @@ import { FloatingText } from "./FloatingText";
 import {
   DailyRewardsModal,
   ShopModal,
-  SeasonPassModal,
+  PremiumModal,
   GameOverModal,
   EnergyModal,
   SettingsModal,
@@ -68,7 +68,18 @@ import {
   setSfxEnabled,
   setMusicEnabled,
 } from "@/src/services/audio";
-import { showRewardedAd, presentProPaywall, presentCustomerCenter, hasProEntitlement, addEntitlementListener, presentPrivacyOptions, isPrivacyOptionsRequired } from "@/src/services/monetization";
+import {
+  showRewardedAd,
+  showInterstitialAd,
+  getEntitlementState,
+  addEntitlementListener,
+  purchaseProduct,
+  restorePurchases,
+  presentCustomerCenter,
+  presentPrivacyOptions,
+  isPrivacyOptionsRequired,
+  PRODUCT_IDS,
+} from "@/src/services/monetization";
 
 const STORAGE_KEYS = {
   HIGH_SCORE: "ba_high_score",
@@ -137,7 +148,11 @@ export function GameScreen() {
   const [gridContainerHeight, setGridContainerHeight] = useState(0);
   const [gridScale, setGridScale] = useState(1.0);
   const [highScore, setHighScore] = useState(0);
-  const [passActive, setPassActive] = useState(false);
+  // Premium Pack = gameplay perks (2x score, golden skins, unlimited energy)
+  // AND ad removal. adsRemoved = Remove Ads OR Premium Pack — these users
+  // never see interstitials.
+  const [premiumActive, setPremiumActive] = useState(false);
+  const [adsRemoved, setAdsRemoved] = useState(false);
   const [dailyDay, setDailyDay] = useState(0);
 
   // Settings
@@ -149,7 +164,7 @@ export function GameScreen() {
 
   // Modals
   const [showShop, setShowShop] = useState(false);
-  const [showPass, setShowPass] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
   const [showDaily, setShowDaily] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [showEnergy, setShowEnergy] = useState(false);
@@ -186,7 +201,7 @@ export function GameScreen() {
         storage.getItem(STORAGE_KEYS.COINS, 100),
         storage.getItem(STORAGE_KEYS.UNDOS, 3),
         storage.getItem(STORAGE_KEYS.ENERGY, MAX_ENERGY),
-	storage.getItem(STORAGE_KEYS.HINTS, 0),
+        storage.getItem(STORAGE_KEYS.HINTS, 0),
         storage.getItem(STORAGE_KEYS.HAMMERS, 0),
         storage.getItem(STORAGE_KEYS.PASS, false),
         storage.getItem(STORAGE_KEYS.SFX, true),
@@ -201,7 +216,7 @@ export function GameScreen() {
       setEnergy((e as number) ?? MAX_ENERGY);
       setHints((hnt as number) ?? 0);
       setHammers((hmr as number) ?? 0);
-      setPassActive((pa as boolean) ?? false);
+      setPremiumActive((pa as boolean) ?? false);
       setSfxOn((sfx as boolean) ?? true);
       setMusicOn((mus as boolean) ?? true);
       setHapticsOn((hap as boolean) ?? true);
@@ -227,14 +242,19 @@ export function GameScreen() {
         if ((mus as boolean) ?? true) startMusic();
       }, 500);
 
-      // RevenueCat: check entitlement and subscribe to live updates.
+      // RevenueCat: pull the live entitlement state — it overrides the local
+      // premium cache (and is the ONLY source of truth for Remove Ads).
       try {
-        const has = await hasProEntitlement();
-        if (has) setPassActive(true);
+        const state = await getEntitlementState();
+        if (state.premium) setPremiumActive(true);
+        setAdsRemoved(state.removeAds);
       } catch {}
     })();
     let unsub: (() => void) | undefined;
-    addEntitlementListener((hasPro) => setPassActive(hasPro)).then((u) => {
+    addEntitlementListener((state) => {
+      setPremiumActive(state.premium);
+      setAdsRemoved(state.removeAds);
+    }).then((u) => {
       unsub = u;
     });
     // Ask Google whether the user is in a region where the UMP "Privacy
@@ -258,15 +278,15 @@ export function GameScreen() {
   useEffect(() => {
     storage.setItem(STORAGE_KEYS.ENERGY, energy);
   }, [energy]);
-  useEffect(() => { 
+  useEffect(() => {
     storage.setItem(STORAGE_KEYS.HINTS, hints);
   }, [hints]);
   useEffect(() => {
     storage.setItem(STORAGE_KEYS.HAMMERS, hammers);
   }, [hammers]);
   useEffect(() => {
-    storage.setItem(STORAGE_KEYS.PASS, passActive);
-  }, [passActive]);
+    storage.setItem(STORAGE_KEYS.PASS, premiumActive);
+  }, [premiumActive]);
   useEffect(() => {
     storage.setItem(STORAGE_KEYS.LINES, linesCleared);
   }, [linesCleared]);
@@ -443,7 +463,7 @@ export function GameScreen() {
       // base points: cell count
       let cellCount = 0;
       for (const row of piece.shape) for (const v of row) if (v) cellCount++;
-      const passMul = passActive ? 2 : 1;
+      const passMul = premiumActive ? 2 : 1;
       let gain = cellCount * 5 * passMul;
 
       if (totalClears > 0) {
@@ -547,7 +567,7 @@ export function GameScreen() {
       combo,
       computeCell,
       highScore,
-      passActive,
+      premiumActive,
       linesCleared,
       spawnBurstsForLines,
       addFloatingText,
@@ -674,7 +694,13 @@ export function GameScreen() {
     setShowGameOver(false);
     setShowSettings(false);
     undoSnap.current = null;
-  }, []);
+    // Whisper Ball strategy: interstitial on "back to menu" (session restart
+    // in this single-screen game). The service enforces the hard 90-second
+    // cap, and ad-free users (Remove Ads / Premium Pack) never trigger it.
+    if (!adsRemoved) {
+      void showInterstitialAd();
+    }
+  }, [adsRemoved]);
 
   // Permanently erase ALL persisted data — used by the in-app
   // "Reset all data" button in Settings (referenced in the Privacy Policy
@@ -689,7 +715,8 @@ export function GameScreen() {
     setCoins(0);
     setUndos(3);
     setEnergy(MAX_ENERGY);
-    setPassActive(false);
+    setPremiumActive(false);
+    setAdsRemoved(false);
     setLinesCleared(0);
     setDailyDay(0);
     setSfxOn(true);
@@ -707,32 +734,67 @@ export function GameScreen() {
     setShowGameOver(false);
     setShowEnergy(false);
     setShowShop(false);
-    setShowPass(false);
+    setShowPremium(false);
     setShowDaily(false);
     setShowSettings(false);
     undoSnap.current = null;
+    // Note: real purchases live in Google Play / RevenueCat, not local
+    // storage — the entitlement listener will re-apply them moments later.
   }, []);
 
-  const handleSubscribePass = useCallback(async () => {
+  // --- Dual-IAP purchase handlers (Whisper Ball strategy) ---
+  const refreshEntitlements = useCallback(async () => {
+    try {
+      const state = await getEntitlementState();
+      setPremiumActive(state.premium);
+      setAdsRemoved(state.removeAds);
+    } catch {}
+  }, []);
+
+  const handleBuyPremium = useCallback(async () => {
     setLoadingIap(true);
     try {
-      const { didGainAccess } = await presentProPaywall();
-      if (didGainAccess) {
-        setPassActive(true);
-        setShowPass(false);
+      const { success } = await purchaseProduct(PRODUCT_IDS.PREMIUM_PACK);
+      if (success) {
+        await refreshEntitlements();
+        setShowPremium(false);
         haptic.success();
         playSfx("bonus");
       }
     } finally {
       setLoadingIap(false);
     }
-  }, []);
+  }, [refreshEntitlements]);
 
-  const handleManageSubscription = useCallback(async () => {
+  const handleBuyRemoveAds = useCallback(async () => {
+    setLoadingIap(true);
+    try {
+      const { success } = await purchaseProduct(PRODUCT_IDS.REMOVE_ADS);
+      if (success) {
+        await refreshEntitlements();
+        setShowPremium(false);
+        haptic.success();
+        playSfx("bonus");
+      }
+    } finally {
+      setLoadingIap(false);
+    }
+  }, [refreshEntitlements]);
+
+  const handleRestorePurchases = useCallback(async () => {
+    setLoadingIap(true);
+    try {
+      await restorePurchases();
+      await refreshEntitlements();
+    } finally {
+      setLoadingIap(false);
+    }
+  }, [refreshEntitlements]);
+
+  const handleManagePurchases = useCallback(async () => {
     await presentCustomerCenter();
-    const has = await hasProEntitlement();
-    setPassActive(has);
-  }, []);
+    await refreshEntitlements();
+  }, [refreshEntitlements]);
 
   // Open Google UMP "Privacy options" form so the user can change their
   // GDPR / personalised-ads consent. Only relevant in regulated regions.
@@ -756,8 +818,8 @@ export function GameScreen() {
   }, []);
   const onPressEnergy = useCallback(() => {
     haptic.selection();
-    if (!passActive && energy === 0) setShowEnergy(true);
-  }, [passActive, energy]);
+    if (!premiumActive && energy === 0) setShowEnergy(true);
+  }, [premiumActive, energy]);
   const onPressSettings = useCallback(() => {
     haptic.selection();
     setShowSettings(true);
@@ -864,9 +926,9 @@ export function GameScreen() {
           score={score}
           streak={streak}
           coins={coins}
-          energy={passActive ? MAX_ENERGY : energy}
+          energy={premiumActive ? MAX_ENERGY : energy}
           maxEnergy={MAX_ENERGY}
-          unlimitedEnergy={passActive}
+          unlimitedEnergy={premiumActive}
           undos={undos}
           onPressCoins={onPressCoins}
           onPressEnergy={onPressEnergy}
@@ -899,7 +961,7 @@ export function GameScreen() {
             clearingCols={clearingCols}
             flashRows={flashRows}
             flashCols={flashCols}
-            goldenSkin={passActive}
+            goldenSkin={premiumActive}
             onGridLayout={onGridMounted}
             cellSize={liveCellSize}
             maxHeight={gridContainerHeight > 0 ? gridContainerHeight : undefined}
@@ -949,7 +1011,7 @@ export function GameScreen() {
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
-            goldenSkin={passActive}
+            goldenSkin={premiumActive}
             scale={gridScale}
           />
         </View>
@@ -987,16 +1049,19 @@ export function GameScreen() {
         coins={coins}
         onPurchase={handleShopBuy}
         onClose={() => setShowShop(false)}
-        onOpenSeasonPass={() => {
+        onOpenPremium={() => {
           setShowShop(false);
-          setShowPass(true);
+          setShowPremium(true);
         }}
       />
-      <SeasonPassModal
-        visible={showPass}
-        active={passActive}
-        onSubscribe={handleSubscribePass}
-        onClose={() => setShowPass(false)}
+      <PremiumModal
+        visible={showPremium}
+        premiumActive={premiumActive}
+        adsRemoved={adsRemoved}
+        onBuyPremium={handleBuyPremium}
+        onBuyRemoveAds={handleBuyRemoveAds}
+        onRestore={handleRestorePurchases}
+        onClose={() => setShowPremium(false)}
         loading={loadingIap}
       />
       <GameOverModal
@@ -1006,11 +1071,11 @@ export function GameScreen() {
         onWatchAd={handleWatchAd}
         onContinue={handleContinueWithCoins}
         onRestart={handleRestart}
-        onBuyPass={() => {
+        onBuyPremium={() => {
           setShowGameOver(false);
-          setShowPass(true);
+          setShowPremium(true);
         }}
-        passActive={passActive}
+        premiumActive={premiumActive}
         loadingAd={loadingAd}
       />
       <EnergyModal
@@ -1019,11 +1084,11 @@ export function GameScreen() {
         onRefillCoins={handleRefillCoins}
         onWatchAd={handleWatchAd}
         onClose={() => setShowEnergy(false)}
-        onBuyPass={() => {
+        onBuyPremium={() => {
           setShowEnergy(false);
-          setShowPass(true);
+          setShowPremium(true);
         }}
-        passActive={passActive}
+        premiumActive={premiumActive}
         loadingAd={loadingAd}
       />
       <SettingsModal
@@ -1037,7 +1102,7 @@ export function GameScreen() {
         toggleHaptics={toggleHaptics}
         onRestart={handleRestart}
         onResetAllData={handleResetAllData}
-        onManageSubscription={passActive ? handleManageSubscription : undefined}
+        onManagePurchases={premiumActive ? handleManagePurchases : undefined}
         onUpdateAdConsent={showAdConsent ? handleUpdateAdConsent : undefined}
       />
       {/* Dev-only overlay — invisible in production. Tap top-right corner
@@ -1093,6 +1158,36 @@ const styles = StyleSheet.create({
     borderWidth: 6,
     borderColor: "#ff0033",
     alignSelf: "center",
+  },
+  zoomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    marginTop: 4,
+  },
+  zoomBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  zoomText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "800",
+    lineHeight: 22,
+  },
+  zoomLabel: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    fontWeight: "700",
+    minWidth: 44,
+    textAlign: "center",
   },
   zoomHint: {
     color: "rgba(255,255,255,0.35)",

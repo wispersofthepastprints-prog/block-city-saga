@@ -1,5 +1,5 @@
 // All game modals consolidated in one file (small, easy to follow)
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -14,24 +14,6 @@ import { Icon } from "./Icon";
 import { LinearGradient } from "expo-linear-gradient";
 import { NeonModal } from "./NeonModal";
 import { haptic, playSfx } from "@/src/services/audio";
-import { IS_PASS_AVAILABLE } from "@/src/services/monetization";
-
-// ---------------------------------------------------------------------------
-// "Coming Soon" placeholder shown wherever the Season Pass entry points used
-// to live. Styling matches the visual provided by the product owner — neutral,
-// muted, clearly disabled.
-// ---------------------------------------------------------------------------
-function PassComingSoon({ style }: { style?: any }) {
-  return (
-    <TouchableOpacity
-      style={[mStyles.passComingSoon, style]}
-      disabled
-      testID="pass-coming-soon"
-    >
-      <Text style={mStyles.passComingSoonText}>👑 Pass — Coming Soon</Text>
-    </TouchableOpacity>
-  );
-}
 
 // =============================================================================
 // DAILY REWARDS
@@ -139,13 +121,13 @@ export function ShopModal({
   coins,
   onPurchase,
   onClose,
-  onOpenSeasonPass,
+  onOpenPremium,
 }: {
   visible: boolean;
   coins: number;
   onPurchase: (id: string, price: number) => void;
   onClose: () => void;
-  onOpenSeasonPass: () => void;
+  onOpenPremium: () => void;
 }) {
   return (
     <NeonModal
@@ -199,40 +181,48 @@ export function ShopModal({
           </TouchableOpacity>
         );
       })}
-      {IS_PASS_AVAILABLE ? (
-        <TouchableOpacity
-          style={mStyles.passUpsell}
-          onPress={() => {
-            haptic.light();
-            onOpenSeasonPass();
-          }}
-          testID="shop-open-pass"
-        >
-          <Icon name="star" size={16} color="#ffbe0b" />
-          <Text style={mStyles.passUpsellText}>
-            Skip the grind — Season Pass for unlimited energy!
-          </Text>
-        </TouchableOpacity>
-      ) : (
-        <PassComingSoon style={{ marginTop: 8 }} />
-      )}
+      <TouchableOpacity
+        style={mStyles.passUpsell}
+        onPress={() => {
+          haptic.light();
+          onOpenPremium();
+        }}
+        testID="shop-open-premium"
+      >
+        <Icon name="star" size={16} color="#ffbe0b" />
+        <Text style={mStyles.passUpsellText}>
+          Go ad-free — Premium Pack from $4.99!
+        </Text>
+      </TouchableOpacity>
     </NeonModal>
   );
 }
 
 // =============================================================================
-// SEASON PASS
+// PREMIUM (dual one-time IAP — Whisper Ball strategy)
+//
+//   • Remove Ads   $4.99 — kills interstitials, nothing else
+//   • Premium Pack $6.99 — ad removal + 2x progress + golden skins
+//                          + unlimited energy
+// Prices shown here are the US list prices; the Google Play billing sheet
+// always displays the player's final localised price before they confirm.
 // =============================================================================
-export function SeasonPassModal({
+export function PremiumModal({
   visible,
-  active,
-  onSubscribe,
+  premiumActive,
+  adsRemoved,
+  onBuyPremium,
+  onBuyRemoveAds,
+  onRestore,
   onClose,
   loading,
 }: {
   visible: boolean;
-  active: boolean;
-  onSubscribe: () => void;
+  premiumActive: boolean;
+  adsRemoved: boolean;
+  onBuyPremium: () => void;
+  onBuyRemoveAds: () => void;
+  onRestore: () => void;
   onClose: () => void;
   loading: boolean;
 }) {
@@ -240,7 +230,7 @@ export function SeasonPassModal({
     <NeonModal
       visible={visible}
       onClose={onClose}
-      title="TETRIS ARCHITECT PRO"
+      title="BLOCK CITY SAGA PREMIUM"
       borderColor="#ffbe0b"
     >
       <Image
@@ -250,41 +240,76 @@ export function SeasonPassModal({
         style={mStyles.passHero}
         contentFit="cover"
       />
-      <Text style={mStyles.passTitle}>Unlock the Architect</Text>
+      <Text style={mStyles.passTitle}>Build Without Limits</Text>
       <View style={{ gap: 8, marginVertical: 12 }}>
+        <PassPerk icon="close-circle" text="No Interstitial Ads, Ever" color="#3a86ff" />
         <PassPerk icon="rocket" text="2x City Progress" color="#ff006e" />
         <PassPerk icon="trophy" text="Golden Block Skins" color="#ffbe0b" />
         <PassPerk icon="flash" text="Unlimited Energy" color="#06ffa5" />
-        <PassPerk icon="close-circle" text="No Ads, Ever" color="#3a86ff" />
-        <PassPerk icon="diamond" text="Exclusive Daily Rewards" color="#8338ec" />
       </View>
-      {!IS_PASS_AVAILABLE ? (
-        <PassComingSoon />
-      ) : active ? (
+      {premiumActive ? (
         <View style={[mStyles.cta, { backgroundColor: "#06ffa5" }]}>
           <Text style={[mStyles.ctaText, { color: "#000" }]}>
-            ✓ ACTIVE — PREMIUM PERKS ENABLED
+            ✓ PREMIUM PACK ACTIVE
           </Text>
         </View>
       ) : (
-        <TouchableOpacity
-          style={[mStyles.cta, { backgroundColor: "#ffbe0b" }]}
-          onPress={onSubscribe}
-          disabled={loading}
-          testID="pass-subscribe"
-        >
-          {loading ? (
-            <ActivityIndicator color="#000" />
+        <>
+          <TouchableOpacity
+            style={[mStyles.cta, { backgroundColor: "#ffbe0b" }]}
+            onPress={onBuyPremium}
+            disabled={loading}
+            testID="buy-premium-pack"
+          >
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <>
+                <Icon name="diamond" size={16} color="#000" />
+                <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
+                  PREMIUM PACK — $6.99
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+          {adsRemoved ? (
+            <View style={[mStyles.cta, { backgroundColor: "#06ffa5" }]}>
+              <Text style={[mStyles.ctaText, { color: "#000" }]}>
+                ✓ REMOVE ADS ACTIVE
+              </Text>
+            </View>
           ) : (
-            <Text style={[mStyles.ctaText, { color: "#000" }]}>
-              CHOOSE A PLAN
-            </Text>
+            <TouchableOpacity
+              style={[mStyles.cta, { backgroundColor: "#3a86ff" }]}
+              onPress={onBuyRemoveAds}
+              disabled={loading}
+              testID="buy-remove-ads"
+            >
+              {loading ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <>
+                  <Icon name="close-circle" size={16} color="#000" />
+                  <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
+                    REMOVE ADS ONLY — $4.99
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </>
       )}
+      <TouchableOpacity
+        onPress={onRestore}
+        disabled={loading}
+        testID="restore-purchases"
+        style={{ paddingVertical: 6 }}
+      >
+        <Text style={mStyles.restoreLink}>Restore purchases</Text>
+      </TouchableOpacity>
       <Text style={mStyles.disclaimer}>
-        Available as Lifetime, Yearly, or Monthly. Auto-renewing subscriptions
-        cancel anytime. Billing via Google Play.
+        One-time purchases, yours forever. Remove Ads is included in the
+        Premium Pack. Billing via Google Play.
       </Text>
     </NeonModal>
   );
@@ -324,8 +349,8 @@ export function GameOverModal({
   onWatchAd,
   onContinue,
   onRestart,
-  onBuyPass,
-  passActive,
+  onBuyPremium,
+  premiumActive,
   loadingAd,
 }: {
   visible: boolean;
@@ -334,8 +359,8 @@ export function GameOverModal({
   onWatchAd: () => void;
   onContinue: () => void;
   onRestart: () => void;
-  onBuyPass: () => void;
-  passActive: boolean;
+  onBuyPremium: () => void;
+  premiumActive: boolean;
   loadingAd: boolean;
 }) {
   return (
@@ -381,15 +406,15 @@ export function GameOverModal({
       >
         <Text style={mStyles.ctaText}>CONTINUE (50 COINS)</Text>
       </TouchableOpacity>
-      {!passActive && IS_PASS_AVAILABLE && (
+      {!premiumActive && (
         <TouchableOpacity
           style={[mStyles.cta, { backgroundColor: "#ffbe0b" }]}
-          onPress={onBuyPass}
-          testID="gameover-buy-pass"
+          onPress={onBuyPremium}
+          testID="gameover-buy-premium"
         >
           <Icon name="star" size={16} color="#000" />
           <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
-            UNLOCK PRO
+            GO AD-FREE — PREMIUM
           </Text>
         </TouchableOpacity>
       )}
@@ -413,8 +438,8 @@ export function EnergyModal({
   onRefillCoins,
   onWatchAd,
   onClose,
-  onBuyPass,
-  passActive,
+  onBuyPremium,
+  premiumActive,
   loadingAd,
 }: {
   visible: boolean;
@@ -422,8 +447,8 @@ export function EnergyModal({
   onRefillCoins: () => void;
   onWatchAd: () => void;
   onClose: () => void;
-  onBuyPass: () => void;
-  passActive: boolean;
+  onBuyPremium: () => void;
+  premiumActive: boolean;
   loadingAd: boolean;
 }) {
   return (
@@ -467,15 +492,15 @@ export function EnergyModal({
           40 COINS — REFILL
         </Text>
       </TouchableOpacity>
-      {!passActive && IS_PASS_AVAILABLE && (
+      {!premiumActive && (
         <TouchableOpacity
           style={[mStyles.cta, { backgroundColor: "#ffbe0b" }]}
-          onPress={onBuyPass}
-          testID="energy-buy-pass"
+          onPress={onBuyPremium}
+          testID="energy-buy-premium"
         >
           <Icon name="star" size={16} color="#000" />
           <Text style={[mStyles.ctaText, { color: "#000", marginLeft: 6 }]}>
-            UNLIMITED — UNLOCK PRO
+            UNLIMITED ENERGY — PREMIUM
           </Text>
         </TouchableOpacity>
       )}
@@ -497,7 +522,7 @@ export function SettingsModal({
   toggleHaptics,
   onRestart,
   onResetAllData,
-  onManageSubscription,
+  onManagePurchases,
   onUpdateAdConsent,
 }: {
   visible: boolean;
@@ -510,11 +535,10 @@ export function SettingsModal({
   toggleHaptics: () => void;
   onRestart: () => void;
   onResetAllData: () => void;
-  onManageSubscription?: () => void;
+  onManagePurchases?: () => void;
   onUpdateAdConsent?: () => void;
 }) {
   const confirmResetAllData = () => {
-    haptic.warning?.();
     Alert.alert(
       "Reset All Data?",
       "This will permanently erase your high score, coins, energy, undos, daily streak, settings and unlock progress.\n\nThis cannot be undone.",
@@ -560,7 +584,7 @@ export function SettingsModal({
         testID="settings-haptics"
       />
       <View style={mStyles.aboutBlock}>
-        <Text style={mStyles.aboutTitle}>Tetris Architect v1.0.0</Text>
+        <Text style={mStyles.aboutTitle}>Block City Saga v1.0.0</Text>
         <Text style={mStyles.aboutSubtitle}>by wispersofthepast</Text>
         <View style={mStyles.aboutLinks}>
           <TouchableOpacity
@@ -586,18 +610,18 @@ export function SettingsModal({
           </TouchableOpacity>
         </View>
       </View>
-      {onManageSubscription && (
+      {onManagePurchases && (
         <TouchableOpacity
           style={[mStyles.cta, { backgroundColor: "#3a86ff", marginTop: 4 }]}
           onPress={() => {
             haptic.selection();
-            onManageSubscription();
+            onManagePurchases();
           }}
-          testID="settings-manage-sub"
+          testID="settings-manage-purchases"
         >
           <Icon name="diamond" size={16} color="#fff" />
           <Text style={[mStyles.ctaText, { marginLeft: 6 }]}>
-            MANAGE SUBSCRIPTION
+            MANAGE PURCHASES
           </Text>
         </TouchableOpacity>
       )}
@@ -840,24 +864,6 @@ const mStyles = StyleSheet.create({
     borderColor: "rgba(255,190,11,0.2)",
     marginTop: 8,
   },
-  passComingSoon: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    opacity: 0.55,
-    marginTop: 8,
-  },
-  passComingSoonText: {
-    color: "#8b8b9e",
-    fontWeight: "800",
-    fontSize: 12,
-    letterSpacing: 0.6,
-  },
   passUpsellText: {
     color: "#ffbe0b",
     fontSize: 12,
@@ -876,6 +882,13 @@ const mStyles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
     marginVertical: 4,
+  },
+  restoreLink: {
+    color: "#3a86ff",
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
   perkRow: {
     flexDirection: "row",
