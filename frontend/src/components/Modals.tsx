@@ -585,12 +585,12 @@ export function SettingsModal({
       />
       <View style={mStyles.aboutBlock}>
         <Text style={mStyles.aboutTitle}>Block City Saga v1.0.0</Text>
-        <Text style={mStyles.aboutSubtitle}>by wispersofthepast</Text>
+        <Text style={mStyles.aboutSubtitle}>by Wispers of the Past</Text>
         <View style={mStyles.aboutLinks}>
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/privacy-policy.html"
+                "https://wispersofthepastprints-prog.github.io/block-city-saga/privacy-policy.html"
               ).catch(() => {})
             }
             testID="settings-privacy"
@@ -601,7 +601,7 @@ export function SettingsModal({
           <TouchableOpacity
             onPress={() =>
               Linking.openURL(
-                "https://htmlpreview.github.io/?https://github.com/wispersofthepastprints-prog/GeoffreyChapman/blob/main/terms-of-service.html"
+                "https://wispersofthepastprints-prog.github.io/block-city-saga/terms-of-service.html"
               ).catch(() => {})
             }
             testID="settings-terms"
