@@ -919,9 +919,9 @@ export function GameScreen() {
     // We own the top and bottom padding via `useSafeLayout()` so we tell
     // SafeAreaView to only handle horizontal edges. This avoids double-padding
     // and lets our generous Android floors actually take effect.
-    <SafeAreaView style={styles.root} edges={["left", "right", "bottom"]}>
+    <SafeAreaView style={styles.root} edges={["left", "right"]}>
       <RainbowBorder />
-      <Animated.View style={[styles.container, shakeStyle, { paddingTop: topPad }]}>
+      <Animated.View style={[styles.container, shakeStyle, { paddingTop: topPad, paddingBottom: bottomPad }]}>
         <TopBar
           score={score}
           streak={streak}
