@@ -121,13 +121,15 @@ export function ShopModal({
   coins,
   onPurchase,
   onClose,
-  onOpenPremium,
+  onBuyRemoveAds,
+  onBuyPremium,
 }: {
   visible: boolean;
   coins: number;
   onPurchase: (id: string, price: number) => void;
   onClose: () => void;
-  onOpenPremium: () => void;
+  onBuyRemoveAds: () => void;
+  onBuyPremium: () => void;
 }) {
   return (
     <NeonModal
@@ -181,19 +183,29 @@ export function ShopModal({
           </TouchableOpacity>
         );
       })}
-      <TouchableOpacity
-        style={mStyles.passUpsell}
-        onPress={() => {
-          haptic.light();
-          onOpenPremium();
-        }}
-        testID="shop-open-premium"
-      >
-        <Icon name="star" size={16} color="#ffbe0b" />
-        <Text style={mStyles.passUpsellText}>
-          Go ad-free — Premium Pack from $4.99!
-        </Text>
-      </TouchableOpacity>
+      <View style={{ marginTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)", paddingTop: 12 }}>
+        <Text style={{ color: "#aaa", fontSize: 12, marginBottom: 8, textAlign: "center" }}>PERMANENT UPGRADES</Text>
+        <TouchableOpacity
+          style={[mStyles.passUpsell, { marginBottom: 8 }]}
+          onPress={() => { haptic.light(); onBuyRemoveAds(); }}
+          testID="shop-buy-remove-ads"
+        >
+          <Icon name="eye-off" size={16} color="#00d4ff" />
+          <Text style={mStyles.passUpsellText}>
+            Remove Ads — $4.99
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={mStyles.passUpsell}
+          onPress={() => { haptic.light(); onBuyPremium(); }}
+          testID="shop-buy-premium"
+        >
+          <Icon name="star" size={16} color="#ffbe0b" />
+          <Text style={mStyles.passUpsellText}>
+            Premium Pack — $6.99 (includes Remove Ads)
+          </Text>
+        </TouchableOpacity>
+      </View>
     </NeonModal>
   );
 }

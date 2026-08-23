@@ -54,7 +54,7 @@ export function useSafeLayout(): SafeLayout {
   );
 
   const bottomPad = Math.max(
-    insets.bottom + 24,
+    (insets.bottom || 0) + 24,
     isAndroid ? ANDROID_BOTTOM_FLOOR : IOS_BOTTOM_FLOOR,
     // Triple-defensive Android fallback — assume nav bar is at least as tall
     // as the status bar with a 80 px buffer on top.

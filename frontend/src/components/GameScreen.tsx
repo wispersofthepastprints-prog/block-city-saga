@@ -1049,10 +1049,8 @@ export function GameScreen() {
         coins={coins}
         onPurchase={handleShopBuy}
         onClose={() => setShowShop(false)}
-        onOpenPremium={() => {
-          setShowShop(false);
-          setShowPremium(true);
-        }}
+        onBuyRemoveAds={handleBuyRemoveAds}
+        onBuyPremium={handleBuyPremium}
       />
       <PremiumModal
         visible={showPremium}
