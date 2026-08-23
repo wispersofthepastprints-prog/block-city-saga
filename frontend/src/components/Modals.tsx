@@ -584,7 +584,7 @@ export function SettingsModal({
         testID="settings-haptics"
       />
       <View style={mStyles.aboutBlock}>
-        <Text style={mStyles.aboutTitle}>Block City Saga v1.0.0</Text>
+        <Text style={mStyles.aboutTitle}>Block City Saga v1.0.3</Text>
         <Text style={mStyles.aboutSubtitle}>by Wispers of the Past</Text>
         <View style={mStyles.aboutLinks}>
           <TouchableOpacity
