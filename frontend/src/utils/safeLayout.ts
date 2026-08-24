@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // One UI nav bar (~120 px) and Android status-bar cutouts on devices that
 // report wrong insets.
 const ANDROID_TOP_FLOOR = 36;
-const ANDROID_BOTTOM_FLOOR = 140;
+const ANDROID_BOTTOM_FLOOR = 180;
 const IOS_TOP_FLOOR = 12;
 const IOS_BOTTOM_FLOOR = 80;
 

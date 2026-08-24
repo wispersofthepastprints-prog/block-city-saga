@@ -761,6 +761,8 @@ export function GameScreen() {
         haptic.success();
         playSfx("bonus");
       }
+    } catch (err: any) {
+      console.error("Premium purchase error:", err);
     } finally {
       setLoadingIap(false);
     }
@@ -776,6 +778,8 @@ export function GameScreen() {
         haptic.success();
         playSfx("bonus");
       }
+    } catch (err: any) {
+      console.error("Remove Ads purchase error:", err);
     } finally {
       setLoadingIap(false);
     }
@@ -790,6 +794,18 @@ export function GameScreen() {
       setLoadingIap(false);
     }
   }, [refreshEntitlements]);
+
+  /* Shop-modal wrappers — close Shop FIRST so Google Play billing sheet
+     isn't blocked by the modal overlay */
+  const handleShopRemoveAds = useCallback(() => {
+    setShowShop(false);
+    setTimeout(() => handleBuyRemoveAds(), 300);
+  }, [handleBuyRemoveAds]);
+
+  const handleShopBuyPremium = useCallback(() => {
+    setShowShop(false);
+    setTimeout(() => handleBuyPremium(), 300);
+  }, [handleBuyPremium]);
 
   const handleManagePurchases = useCallback(async () => {
     await presentCustomerCenter();
@@ -1049,8 +1065,8 @@ export function GameScreen() {
         coins={coins}
         onPurchase={handleShopBuy}
         onClose={() => setShowShop(false)}
-        onBuyRemoveAds={handleBuyRemoveAds}
-        onBuyPremium={handleBuyPremium}
+        onBuyRemoveAds={handleShopRemoveAds}
+        onBuyPremium={handleShopBuyPremium}
       />
       <PremiumModal
         visible={showPremium}
@@ -1128,11 +1144,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   trayArea: {
-    height: 90,
+    minHeight: 90,
     flexShrink: 0,
     width: "100%",
     justifyContent: "center",
     backgroundColor: "#050510",
+    paddingBottom: 24,
   },
   skylineWrap: {
     alignItems: "center",

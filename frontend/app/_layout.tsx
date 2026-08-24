@@ -7,6 +7,18 @@ import { StatusBar } from "expo-status-bar";
 import { StyleSheet } from "react-native";
 import { initializeMonetization } from "@/src/services/monetization";
 
+import * as NavigationBar from 'expo-navigation-bar';
+
+async function setupNavBar() {
+  try {
+    await NavigationBar.setPositionAsync('absolute');
+    await NavigationBar.setBackgroundColorAsync('#050510');
+  } catch (e) {
+    // iOS or unsupported — ignore
+  }
+}
+setupNavBar();
+
 export default function RootLayout() {
   useEffect(() => {
     initializeMonetization().catch((e) =>
