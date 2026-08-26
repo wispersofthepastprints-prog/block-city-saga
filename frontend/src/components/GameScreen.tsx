@@ -146,8 +146,7 @@ export function GameScreen() {
   const [hintGhost, setHintGhost] = useState<{row: number; col: number; pieceIdx: number} | null>(null);
   const [hammerMode, setHammerMode] = useState(false);
   const [gridContainerHeight, setGridContainerHeight] = useState(0);
-  const [gridScale, setGridScale] = useState(1.0);
-  const [highScore, setHighScore] = useState(0);
+    const [highScore, setHighScore] = useState(0);
   // Premium Pack = gameplay perks (2x score, golden skins, unlimited energy)
   // AND ad removal. adsRemoved = Remove Ads OR Premium Pack — these users
   // never see interstitials.
@@ -948,7 +947,8 @@ export function GameScreen() {
           undos={undos}
           onPressCoins={onPressCoins}
           onPressEnergy={onPressEnergy}
-          onPressSettings={onPressSettings}
+          onPressShop={onPressCoins}
+          onPressMenu={onPressSettings}
           onPressUndo={handleUndo}
           hints={hints}
           hammers={hammers}
@@ -981,7 +981,7 @@ export function GameScreen() {
             onGridLayout={onGridMounted}
             cellSize={liveCellSize}
             maxHeight={gridContainerHeight > 0 ? gridContainerHeight : undefined}
-            scale={gridScale}
+            scale={1.0}
             onScaleChange={setGridScale}
             hintGhost={hintGhost}
             hammerMode={hammerMode}
@@ -1009,7 +1009,7 @@ export function GameScreen() {
           >
             <Text style={styles.zoomText}>−</Text>
           </TouchableOpacity>
-          <Text style={styles.zoomLabel}>{Math.round(gridScale * 100)}%</Text>
+          <Text style={styles.zoomLabel}>100%</Text>
           <TouchableOpacity
             onPress={() => setGridScale((s) => Math.min(1.5, s + 0.1))}
             style={styles.zoomBtn}
@@ -1018,8 +1018,7 @@ export function GameScreen() {
             <Text style={styles.zoomText}>+</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.zoomHint}>👆 Pinch the board to resize</Text>
-
+        
         <View style={[styles.trayArea, { paddingBottom: Math.max(bottomPad || 0, 24) }]}>
           <Tray
             pieces={pieces}
@@ -1028,7 +1027,7 @@ export function GameScreen() {
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
             goldenSkin={premiumActive}
-            scale={gridScale}
+            scale={1.0}
           />
         </View>
       </Animated.View>

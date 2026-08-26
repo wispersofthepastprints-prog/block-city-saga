@@ -39,7 +39,8 @@ export function TopBar({
   undos,
   onPressCoins,
   onPressEnergy,
-  onPressSettings,
+  onPressShop,
+  onPressMenu,
   onPressUndo,
   hints = 0,
   hammers = 0,
@@ -124,9 +125,20 @@ export function TopBar({
       </View>
 
       {/* Settings — was previously miswired to onPressEnergy */}
-      <TouchableOpacity onPress={onPressSettings} style={styles.gear} activeOpacity={0.7} testID="top-bar-settings">
-        <Icon name="settings" size={20} color="#fff" />
-      </TouchableOpacity>
+      <TouchableOpacity
+          style={{ paddingHorizontal: 10, paddingVertical: 4 }}
+          onPress={onPressShop}
+          activeOpacity={0.7}
+        >
+          <Text style={{ color: "#ffbe0b", fontSize: 13, fontWeight: "800", letterSpacing: 0.5 }}>SHOP</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ paddingHorizontal: 10, paddingVertical: 4 }}
+          onPress={onPressMenu}
+          activeOpacity={0.7}
+        >
+          <Text style={{ color: "#fff", fontSize: 13, fontWeight: "800", letterSpacing: 0.5 }}>MENU</Text>
+        </TouchableOpacity>
     </View>
   );
 }

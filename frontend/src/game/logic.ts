@@ -2,7 +2,7 @@
 import type { Piece, PieceColor } from "./pieces";
 
 export const COLS = 8;
-export const ROWS = 10;
+export const ROWS = 8;
 
 export type Cell = { filled: boolean; color: PieceColor | null };
 
