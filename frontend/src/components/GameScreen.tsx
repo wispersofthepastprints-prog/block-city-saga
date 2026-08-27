@@ -11,8 +11,7 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
-  TouchableOpacity,
-} from "react-native";
+  TouchableOpacity,\n  Alert,\n} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
 import { DebugOverlay } from "./DebugOverlay";
@@ -753,15 +752,18 @@ export function GameScreen() {
   const handleBuyPremium = useCallback(async () => {
     setLoadingIap(true);
     try {
-      const { success } = await purchaseProduct(PRODUCT_IDS.PREMIUM_PACK);
+      const { success, error } = await purchaseProduct(PRODUCT_IDS.PREMIUM_PACK);
       if (success) {
         await refreshEntitlements();
         setShowPremium(false);
         haptic.success();
         playSfx("bonus");
+      } else if (error) {
+        Alert.alert("Purchase Unavailable", error);
       }
     } catch (err: any) {
       console.error("Premium purchase error:", err);
+      Alert.alert("Purchase Failed", err?.message || "Could not complete purchase.");
     } finally {
       setLoadingIap(false);
     }
@@ -770,15 +772,18 @@ export function GameScreen() {
   const handleBuyRemoveAds = useCallback(async () => {
     setLoadingIap(true);
     try {
-      const { success } = await purchaseProduct(PRODUCT_IDS.REMOVE_ADS);
+      const { success, error } = await purchaseProduct(PRODUCT_IDS.REMOVE_ADS);
       if (success) {
         await refreshEntitlements();
         setShowPremium(false);
         haptic.success();
         playSfx("bonus");
+      } else if (error) {
+        Alert.alert("Purchase Unavailable", error);
       }
     } catch (err: any) {
       console.error("Remove Ads purchase error:", err);
+      Alert.alert("Purchase Failed", err?.message || "Could not complete purchase.");
     } finally {
       setLoadingIap(false);
     }

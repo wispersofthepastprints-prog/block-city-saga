@@ -328,7 +328,7 @@ export async function presentCustomerCenter(): Promise<void> {
 
 export async function purchaseProduct(
   productId: string,
-): Promise<{ success: boolean; productId: string }> {
+): Promise<{ success: boolean; productId: string; error?: string }> {
   const Purchases = await getPurchases();
   if (!Purchases) {
     console.log(`[RevenueCat] (mock) purchase ${productId}`);
@@ -336,18 +336,29 @@ export async function purchaseProduct(
     return { success: true, productId };
   }
   try {
+    // Try 1: find in current offering packages
     const offerings = await Purchases.getOfferings();
     const pkg = offerings?.current?.availablePackages?.find(
       (p: any) =>
         p.identifier === productId || p.product?.identifier === productId,
     );
-    if (!pkg) {
-      console.warn(
-        `[RevenueCat] package ${productId} not found in current offering`,
-      );
-      return { success: false, productId };
+    if (pkg) {
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      const state = stateFromCustomerInfo(customerInfo);
+      const success = state.premium || state.removeAds;
+      return { success, productId };
     }
-    const { customerInfo } = await Purchases.purchasePackage(pkg);
+
+    // Try 2: fetch product directly and purchase via StoreProduct
+    console.log(`[RevenueCat] package not found, trying direct product lookup for ${productId}`);
+    const products = await Purchases.getProducts([productId]);
+    const product = products?.find((p: any) => p.identifier === productId);
+    if (!product) {
+      const msg = `Product "${productId}" not found in Play Console / RevenueCat. Check that the product ID is configured and active.`;
+      console.warn(`[RevenueCat] ${msg}`);
+      return { success: false, productId, error: msg };
+    }
+    const { customerInfo } = await Purchases.purchaseStoreProduct(product);
     const state = stateFromCustomerInfo(customerInfo);
     const success = state.premium || state.removeAds;
     return { success, productId };
@@ -355,8 +366,9 @@ export async function purchaseProduct(
     if (e?.userCancelled) {
       return { success: false, productId };
     }
+    const msg = e?.message || String(e);
     console.warn("[RevenueCat] purchase error", e);
-    return { success: false, productId };
+    return { success: false, productId, error: msg };
   }
 }
 
