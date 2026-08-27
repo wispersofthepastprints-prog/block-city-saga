@@ -982,7 +982,6 @@ export function GameScreen() {
             cellSize={liveCellSize}
             maxHeight={gridContainerHeight > 0 ? gridContainerHeight : undefined}
             scale={1.0}
-            onScaleChange={setGridScale}
             hintGhost={hintGhost}
             hammerMode={hammerMode}
             onHammerStrike={handleHammerStrike}
@@ -1002,22 +1001,8 @@ export function GameScreen() {
 
         {/* Grid zoom controls */}
         <View style={styles.zoomRow}>
-          <TouchableOpacity
-            onPress={() => setGridScale((s) => Math.max(0.5, s - 0.1))}
-            style={styles.zoomBtn}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.zoomText}>−</Text>
-          </TouchableOpacity>
           <Text style={styles.zoomLabel}>100%</Text>
-          <TouchableOpacity
-            onPress={() => setGridScale((s) => Math.min(1.5, s + 0.1))}
-            style={styles.zoomBtn}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.zoomText}>+</Text>
-          </TouchableOpacity>
-        </View>
+          </View>
         
         <View style={[styles.trayArea, { paddingBottom: Math.max(bottomPad || 0, 24) }]}>
           <Tray

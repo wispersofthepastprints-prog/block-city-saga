@@ -9,21 +9,15 @@ import { initializeMonetization } from "@/src/services/monetization";
 
 import * as NavigationBar from 'expo-navigation-bar';
 
-async function setupNavBar() {
-  try {
-    await NavigationBar.setPositionAsync('absolute');
-    await NavigationBar.setBackgroundColorAsync('#050510');
-  } catch (e) {
-    // iOS or unsupported — ignore
-  }
-}
-setupNavBar();
-
 export default function RootLayout() {
   useEffect(() => {
     initializeMonetization().catch((e) =>
       console.warn("Monetization init error", e)
     );
+
+    // Android: draw nav bar on top of app (edge-to-edge)
+    NavigationBar.setPositionAsync('absolute').catch(() => {});
+    NavigationBar.setBackgroundColorAsync('#050510').catch(() => {});
   }, []);
 
   return (
