@@ -340,19 +340,21 @@ export async function purchaseProduct(
   }
 
   // Auto-configure if RevenueCat hasn't been set up yet
-    const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? '';
+  if (!rcConfigured) {
+    const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? "";
+    if (!apiKey) {
       return {
         success: false,
         productId,
-        error: 'RevenueCat API key is missing. Set EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY in your .env file.',
+        error: "RevenueCat API key is missing. Set EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY in your .env file.",
       };
     }
     try {
       Purchases.configure({ apiKey });
       rcConfigured = true;
-      console.log('[RevenueCat] late-configured before purchase');
+      console.log("[RevenueCat] late-configured before purchase");
     } catch (e) {
-      console.warn('[RevenueCat] late-configure failed', e);
+      console.warn("[RevenueCat] late-configure failed", e);
     }
   }
 
