@@ -11,7 +11,9 @@ import {
   Text,
   StyleSheet,
   useWindowDimensions,
-  TouchableOpacity,\n  Alert,\n} from "react-native";
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Icon } from "./Icon";
 import { DebugOverlay } from "./DebugOverlay";

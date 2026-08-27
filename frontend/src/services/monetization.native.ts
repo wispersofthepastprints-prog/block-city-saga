@@ -19,7 +19,7 @@
 //     after each show.
 //
 // Env vars (set in /app/frontend/.env):
-//   EXPO_PUBLIC_RC_ANDROID_KEY            — RevenueCat Android SDK key (test_ or goog_)
+//   EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY            — RevenueCat Android SDK key (test_ or goog_)
 //   EXPO_PUBLIC_ADMOB_REWARDED_UNIT_ID    — AdMob production rewarded ad unit id
 //   EXPO_PUBLIC_ADMOB_INTERSTITIAL_UNIT_ID — AdMob production interstitial ad unit id
 import Constants from "expo-constants";
@@ -209,6 +209,8 @@ export async function isPrivacyOptionsRequired(): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 let initStarted = false;
+let rcConfigured = false;
+
 export async function initializeMonetization(): Promise<void> {
   if (initStarted || !IS_NATIVE_RUNTIME) return;
   initStarted = true;
@@ -217,10 +219,10 @@ export async function initializeMonetization(): Promise<void> {
   try {
     const Purchases = await getPurchases();
     if (Purchases) {
-      const apiKey = process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? "";
+      const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? "";
       if (!apiKey) {
         console.warn(
-          "[RevenueCat] EXPO_PUBLIC_RC_ANDROID_KEY is not set — purchases disabled",
+          "[RevenueCat] EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY is not set — purchases disabled",
         );
       } else {
         if (apiKey.startsWith("test_")) {
@@ -234,6 +236,7 @@ export async function initializeMonetization(): Promise<void> {
           } catch {}
         }
         Purchases.configure({ apiKey });
+        rcConfigured = true;
         console.log("[RevenueCat] configured");
       }
     }
@@ -335,6 +338,24 @@ export async function purchaseProduct(
     await new Promise((r) => setTimeout(r, 800));
     return { success: true, productId };
   }
+
+  // Auto-configure if RevenueCat hasn't been set up yet
+    const apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? '';
+      return {
+        success: false,
+        productId,
+        error: 'RevenueCat API key is missing. Set EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY in your .env file.',
+      };
+    }
+    try {
+      Purchases.configure({ apiKey });
+      rcConfigured = true;
+      console.log('[RevenueCat] late-configured before purchase');
+    } catch (e) {
+      console.warn('[RevenueCat] late-configure failed', e);
+    }
+  }
+
   try {
     // Try 1: find in current offering packages
     const offerings = await Purchases.getOfferings();
