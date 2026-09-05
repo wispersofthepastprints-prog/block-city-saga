@@ -176,7 +176,6 @@ const styles = StyleSheet.create({
     gap: 6,
     flex: 1,
     justifyContent: "center",
-    flexWrap: "wrap",
   },
   pill: {
     flexDirection: "row",
@@ -188,6 +187,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
+    minWidth: 72,
+    maxWidth: 90,
   },
   pillDisabled: {
     opacity: 0.3,
@@ -196,6 +197,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: "#fff",
+    minWidth: 28,
+    textAlign: "center",
   },
   pillIcon: {
     fontSize: 12,
