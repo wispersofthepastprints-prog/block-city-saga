@@ -87,27 +87,7 @@ export function TopBar({
         </TouchableOpacity>
 
         {/* Hints */}
-        <TouchableOpacity
-          onPress={onHintPress}
-          disabled={hints <= 0 || !onHintPress}
-          style={[styles.pill, hints <= 0 && styles.pillDisabled]}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.pillIcon}>💡</Text>
-          <Text style={styles.pillText}>{hints}</Text>
-        </TouchableOpacity>
-
         {/* Hammer */}
-        <TouchableOpacity
-          onPress={onHammerPress}
-          disabled={hammers <= 0 || hammerMode || !onHammerPress}
-          style={[styles.pill, (hammers <= 0 || hammerMode) && styles.pillDisabled]}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.pillIcon}>🔨</Text>
-          <Text style={styles.pillText}>{hammers}</Text>
-        </TouchableOpacity>
-
         {/* Energy */}
         <TouchableOpacity onPress={onPressEnergy} style={styles.pill} activeOpacity={0.7}>
           <Icon name="zap" size={14} color="#06ffa5" />
