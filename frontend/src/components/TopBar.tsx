@@ -81,10 +81,6 @@ export function TopBar({
         </View>
 
         {/* Undos — tappable (was a dead View) */}
-        <TouchableOpacity onPress={onPressUndo} style={styles.pill} activeOpacity={0.7} testID="top-bar-undo">
-          <Icon name="undo" size={14} color="#00d4ff" />
-          <Text style={styles.pillText}>{undos}</Text>
-        </TouchableOpacity>
 
         {/* Hints */}
         {/* Hammer */}
@@ -136,6 +132,11 @@ const styles = StyleSheet.create({
   left: {
     alignItems: "flex-start",
     minWidth: 60,
+  },
+  right: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   label: {
     fontSize: 10,
@@ -198,5 +199,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
+  },
+  tabBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  tabBtnShop: {
+    color: "#ffbe0b",
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.5,
+  },
+  tabBtnMenu: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
 });
