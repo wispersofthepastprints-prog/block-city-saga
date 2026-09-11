@@ -134,9 +134,10 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   right: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+    flexDirection: "column",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 2,
   },
   label: {
     fontSize: 10,
