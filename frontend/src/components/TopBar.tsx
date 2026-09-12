@@ -100,21 +100,23 @@ export function TopBar({
         </TouchableOpacity>
       </View>
 
-      {/* Settings — was previously miswired to onPressEnergy */}
-      <TouchableOpacity
-          style={{ paddingHorizontal: 10, paddingVertical: 4 }}
+      {/* Right: SHOP above MENU */}
+      <View style={styles.right}>
+        <TouchableOpacity
+          style={styles.tabBtn}
           onPress={onPressShop}
           activeOpacity={0.7}
         >
-          <Text style={{ color: "#ffbe0b", fontSize: 13, fontWeight: "800", letterSpacing: 0.5 }}>SHOP</Text>
+          <Text style={styles.tabBtnShop}>SHOP</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ paddingHorizontal: 10, paddingVertical: 4 }}
+          style={styles.tabBtn}
           onPress={onPressMenu}
           activeOpacity={0.7}
         >
-          <Text style={{ color: "#fff", fontSize: 13, fontWeight: "800", letterSpacing: 0.5 }}>MENU</Text>
+          <Text style={styles.tabBtnMenu}>MENU</Text>
         </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -138,6 +140,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "center",
     gap: 2,
+    minWidth: 50,
   },
   label: {
     fontSize: 10,
